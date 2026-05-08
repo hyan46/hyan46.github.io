@@ -1,0 +1,20 @@
+# Hugo build output
+public/
+resources/
+.hugo_build.lock
+
+# The ASU sync folder (Delete this from your drive if you don't need it locally!)
+hyan46@general.asu./
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# LaTeX/Org-mode temp files
+ltximg/
+static/ltximg/
