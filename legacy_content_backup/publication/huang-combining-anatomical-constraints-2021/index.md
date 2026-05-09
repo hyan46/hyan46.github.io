@@ -1,0 +1,44 @@
+---
+title: Combining Anatomical Constraints and Deep Learning for 3-D CBCT Dental Image
+  Multi-label Segmentation
+date: '2021-04-01'
+draft: true
+publishDate: '2023-06-22T16:41:34.595954Z'
+authors:
+- Jiayu Huang
+- Hao Yan
+- Jing Li
+- H. Milton Stewart
+- Frank Setzer
+publication_types:
+- '1'
+abstract: 'Machine learning research on medical images is becoming popular as advanced
+  imaging technologies and equipment in medicine become more and more available. Dental
+  Cone-beam Computed Tomography (Dental CBCT), a frequently-used visualization tool
+  for oral diagnosis, provides valuable three-dimensional information, whose development
+  for automation of Dental CBCT analysis, on the other hand, is relatively preliminary.
+  Generally, there are three important characteristics for analyzing Dental CBCT with
+  noisy labels and limited labeled sample size, and availability of oral medicine
+  knowledge. Based on those characteristics, we develop an image segmentation method
+  for Dental CBCT by integrating domain knowledge into deep U-Net for the 3D segmentation.
+  Finally, depending on whether the knowledge can be decomposed into each pixel, the
+  knowledge constraints are classified into two types: separable and non-separable
+  constraints. All knowledge constraints can be represented as a posterior regularization
+  term and solved in different ways in accordance with related types. For separable
+  constraints, the mean-field theory is employed to solve an optimization problem
+  with the independence assumption about the distributions of output variables on
+  each pixel. For non-separable constraints, we propose to combine the importance
+  sampling based approach and the stochastic optimization algorithm. Finally, we propose
+  to formulate the domain knowledge to the learning stage to improve the accuracy
+  and efficiency of automation of Dental CBCT segmentation. Finally, we will apply
+  the proposed methods into the real datasets collected and manually labeled by the
+  doctors at the University of Pennsylvania'
+featured: false
+publication: '*2021 IEEE 37th International Conference on Data Engineering (ICDE)*'
+tags:
+- Health
+- Physics Constrain
+- Segmentation
+doi: 10.1109/ICDE51399.2021.00319
+---
+

@@ -1,0 +1,3 @@
+# Override Wowchemy defaults (see theme i18n/en.yaml for other ids).
+- id: publication
+  translation: Venue
