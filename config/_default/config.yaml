@@ -4,7 +4,7 @@
 # This file is formatted using YAML syntax - learn more at https://learnxinyminutes.com/docs/yaml/
 
 title: Hao Yan # Website name
-baseurl: "https://hyan46.github.io/academic-website/"
+baseurl: "https://hyan46.github.io/"
 copyright: '© {year} Hao Yan' # Footer text, e.g. '© {year} Me'
 googleAnalytics: ''
 
