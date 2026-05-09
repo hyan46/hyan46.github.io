@@ -3,8 +3,8 @@
 title: Hao Yan
 
 build:
-  render: never
-  list: never
+  render: always
+  list: always
 
 # Username (this should match the folder name)
 authors:
