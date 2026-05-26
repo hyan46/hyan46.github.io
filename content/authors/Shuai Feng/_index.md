@@ -19,7 +19,10 @@ education:
   courses:
     - course: Ph.D. Student in Industrial Engineering
       institution: Arizona State University
-social: []
+social:
+  - icon: linkedin
+    icon_pack: fab
+    link: https://www.linkedin.com/in/shuai-feng-895070190/
 email: ""
 user_groups:
   - Current Students

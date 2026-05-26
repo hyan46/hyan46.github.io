@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Title }}</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+
+  {{/* Standalone layout: Wowchemy math head partials are not included; load KaTeX here. */}}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+
+  <style>
+    body { font-family: 'Noto Sans', sans-serif; background-color: #ffffff; color: #4a4a4a; }
+    h1, h2, h3, h4 { font-family: 'Google Sans', sans-serif; font-weight: bold; }
+    .title.is-1 { font-size: 2.5rem; margin-bottom: 20px; }
+    .author-block { display: inline-block; margin-right: 15px; font-size: 1.2rem; color: #209cee; }
+    .publication-links { margin-top: 30px; }
+    .link-block { display: inline-block; margin-right: 10px; margin-bottom: 10px; }
+    .button.is-dark { background-color: #363636; color: #fff; border-radius: 20px; }
+    .button.is-dark:hover { background-color: #000000; color: #fff; }
+    .content { font-size: 1.1rem; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+    .content h2 { margin-top: 40px; margin-bottom: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <section class="hero" style="margin-top: 50px;">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+
+            <h1 class="title is-1">{{ .Title }}</h1>
+
+            <div class="is-size-5">
+              {{ range .Params.authors }}
+                <span class="author-block">{{ . }}</span>
+              {{ end }}
+            </div>
+
+            <div class="publication-links">
+
+              {{ if .Params.url_pdf }}
+              <span class="link-block">
+                <a href="{{ .Params.url_pdf }}" class="button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Paper</span>
+                </a>
+              </span>
+              {{ end }}
+
+              {{ if .Params.url_code }}
+              <span class="link-block">
+                <a href="{{ .Params.url_code }}" class="button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
+                </a>
+              </span>
+              {{ end }}
+
+              {{ if .Params.url_video }}
+              <span class="link-block">
+                <a href="{{ .Params.url_video }}" class="button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-youtube"></i></span><span>Video</span>
+                </a>
+              </span>
+              {{ end }}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="content" id="project-page-article">
+        {{ .Content }}
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" style="margin-top: 50px; padding-bottom: 30px;">
+    <div class="content has-text-centered">
+      <p>This project page was generated using Hugo, based on the <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> template.</p>
+    </div>
+  </footer>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+    onload="renderMathInElement(document.getElementById('project-page-article') || document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'], throwOnError: false});"></script>
+
+</body>
+</html>

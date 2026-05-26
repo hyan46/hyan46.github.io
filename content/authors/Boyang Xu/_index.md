@@ -16,7 +16,13 @@ education:
   courses:
     - course: Ph.D. Student in Data Science, Analytics, and Engineering
       institution: Arizona State University
-social: []
+social:
+  - icon: linkedin
+    icon_pack: fab
+    link: https://www.linkedin.com/in/boyang-xu-14b9271a9/
+  - icon: github
+    icon_pack: fab
+    link: https://github.com/xu5bo5yang
 email: ""
 user_groups:
   - Current Students

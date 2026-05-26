@@ -7,7 +7,7 @@ subtitle: ''
 summary: ''
 authors:
 - Hao Yan
-- Nurretin D. Sergin
+- Nuretin D. Sergin
 - William A. Brenneman
 - Stephen J. Lange
 - Shan Ba

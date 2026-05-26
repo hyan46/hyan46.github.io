@@ -1,0 +1,27 @@
+// Homepage / listing card teasers: show full featured image (no fixed-height crop).
+// Theme default uses Hugo .Fill + .article-banner { object-fit: cover; height: 260px; }.
+
+.card-teaser-img-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.dark .card-teaser-img-wrap {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.card-teaser-banner.article-banner {
+  width: 100%;
+  height: auto !important;
+  max-height: 320px;
+  object-fit: contain !important;
+}
+
+@media (min-width: 992px) {
+  .card-teaser-banner.article-banner {
+    max-height: 380px;
+  }
+}

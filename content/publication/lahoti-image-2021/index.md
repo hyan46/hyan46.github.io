@@ -39,10 +39,10 @@ abstract: Pixel-level feature detection from images is an essential but challeng
   method is developed to solve the large-scale optimization problem. The effectiveness
   of the proposed model is demonstrated using synthetic tests and a real-world case
   study, where the model exhibits superior performance over existing methods.
+date: '2021-01-01'
+year: '2021'
 publication_types:
 - article-journal
 publication: '*IISE Transactions on Healthcare Systems Engineering*'
 doi: 10.1080/24725579.2021.1910599
-date: '2021-01-01'
-year: '2021'
 ---

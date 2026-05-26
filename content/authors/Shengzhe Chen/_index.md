@@ -16,7 +16,10 @@ education:
   courses:
     - course: Ph.D. Student in Industrial Engineering
       institution: Arizona State University
-social: []
+social:
+  - icon: github
+    icon_pack: fab
+    link: https://github.com/shengzhc
 email: ""
 user_groups:
   - Current Students

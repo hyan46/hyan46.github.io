@@ -4,7 +4,7 @@ author: ["Hao Yan"]
 tags: ["Software", "Low", "Rank", "Robust"]
 draft: false
 authors:
-- Nurretin Dorukhan Sergin
+- Nuretin Dorukhan Sergin
 - Jiuyun Hu
 - Ziyue Li
 - Chen Zhang

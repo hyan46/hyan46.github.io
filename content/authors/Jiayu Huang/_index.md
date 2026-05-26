@@ -41,7 +41,7 @@ social:
   link: 'mailto:JiayuHuang@asu.edu'  # For a direct email link, use "mailto:test@example.org".
 - icon: github
   icon_pack: fab
-  link: https://https://github.com/Joannahuangjy
+  link: https://github.com/Joannahuangjy
 - icon: linkedin
   icon_pack: fab
   link: https://www.linkedin.com/in/jiayu-huang-b92009217/

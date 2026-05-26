@@ -61,6 +61,21 @@ taxonomies:
   author: authors
 markup:
   _merge: deep
+  goldmark:
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          inline:
+            - - "$"
+              - "$"
+            - - "\\("
+              - "\\)"
+          block:
+            - - "$$"
+              - "$$"
+            - - "\\["
+              - "\\]"
 related:
   threshold: 80
   includeNewer: true

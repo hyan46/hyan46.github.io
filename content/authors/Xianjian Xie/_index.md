@@ -19,7 +19,10 @@ education:
   courses:
     - course: Ph.D. Student in Data Science, Analytics, and Engineering
       institution: Arizona State University
-social: []
+social:
+  - icon: github
+    icon_pack: fab
+    link: https://github.com/xianjian-xie
 email: ""
 user_groups:
   - Current Students

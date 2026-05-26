@@ -5,7 +5,7 @@ tags: ["Software", "Classification", "Manufacturing", "Image", "Deep-Learning"]
 draft: false
 authors:
 - Jiayu Huang
-- Nurretin Sergin
+- Nuretin Sergin
 - Akshay Dua
 - Erfan Bank Tavakoli
 - Hao Yan

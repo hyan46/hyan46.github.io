@@ -8,7 +8,7 @@ summary: ''
 authors:
 - Hao Yan
 - Huai Ming Yeh
-- Nurettin Sergin
+- Nuretin Sergin
 categories: []
 date: '2019-08-01'
 lastmod: 2021-07-09T12:25:39-07:00

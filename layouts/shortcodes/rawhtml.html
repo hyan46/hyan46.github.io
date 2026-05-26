@@ -1,0 +1,3 @@
+{{/* Emit the inner content as raw HTML. Used to embed tables / figures with custom markup
+     inside markdown content, bypassing Goldmark's default HTML filtering. */}}
+{{- .Inner | safeHTML -}}

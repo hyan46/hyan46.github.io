@@ -16,4 +16,4 @@ caption = ""
 
 +++
 
-{{< github_hyan46_readfromfile "/content/newslist.md" 1000 >}} 
+{{< github_hyan46_readfromfile "/content/newslist.dat" 1000 >}} 

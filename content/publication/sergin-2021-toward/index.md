@@ -4,7 +4,7 @@ author: ["Hao Yan"]
 tags: ["Software", "Anomaly-Detection", "Deep-Learning", "Image", "Manufacturing", "Profile"]
 draft: false
 authors:
-- Nurettin Dorukhan Sergin
+- Nuretin Dorukhan Sergin
 - Hao Yan
 categories: []
 date: '2021-01-01'

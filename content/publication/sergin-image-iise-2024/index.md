@@ -4,7 +4,7 @@ author: ["Hao Yan"]
 tags: ["Software", "Manufacturing", "Image"]
 draft: false
 authors:
-- Nurettin Dorukhan Sergin
+- Nuretin Dorukhan Sergin
 - Jiayu Huang
 - Tzyy-Shuh Chang
 - Hao Yan

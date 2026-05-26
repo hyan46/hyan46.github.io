@@ -5,7 +5,7 @@ tags: ["Software", "Deep-Learning", "Manufacturing", "Regression"]
 draft: false
 authors:
 - Hao Yan
-- Nurretin D. Sergin
+- Nuretin D. Sergin
 - William A. Brenneman
 - Stephen J. Lange
 - Shan Ba

@@ -26,9 +26,9 @@ bio: My research interests include Data Science for Complex Systems.
 
 # Interests to show in About widget
 interests:
-- Artificial Intelligence
-- Data Science
-- Deep Learning
+- Generative Models
+- Reinforcement Learning
+- Anomaly Detection
 
 # Education to show in About widget
 education:

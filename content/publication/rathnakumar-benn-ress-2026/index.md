@@ -3,6 +3,7 @@ title: "Bayesian Entropy Neural Networks for physics-aware prediction"
 author: ["Hao Yan"]
 tags: ["Software", "Bayesian", "Reliability"]
 draft: false
+featured: false
 authors:
 - Rahul Rathnakumar
 - Xuandong Lu

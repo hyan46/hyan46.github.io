@@ -1,10 +1,10 @@
 ---
 # Display name
-title: Nurettin Dorukhan Sergin
+title: Nuretin Dorukhan Sergin
 
 # Username (this should match the folder name)
 authors:
-- Nurretin Sergin
+- Nuretin Sergin
 
 # Is this the primary user of the site?
 superuser: false

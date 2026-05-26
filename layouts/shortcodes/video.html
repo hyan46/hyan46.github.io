@@ -1,0 +1,70 @@
+{{/*
+    Video shortcode for embedding local or remote video files in publication pages.
+
+    Parameters
+    ----------
+    src      : Path to the video file. If local, resolved against the page directory.
+    caption  : Optional caption text (rendered below the video, Markdown supported).
+    width    : Optional CSS width (default "100%").
+    max_width: Optional CSS max-width (default "900px").
+    autoplay : "true" / "false" (default "true").
+    loop     : "true" / "false" (default "true").
+    muted    : "true" / "false" (default "true"). Required for autoplay in most browsers.
+    controls : "true" / "false" (default "true").
+    poster   : Optional path to a poster image.
+*/}}
+
+{{ $src := .Get "src" }}
+{{ $caption := .Get "caption" | default "" }}
+{{ $width := .Get "width" | default "100%" }}
+{{ $max_width := .Get "max_width" | default "900px" }}
+{{ $autoplay := eq (.Get "autoplay" | default "true") "true" }}
+{{ $loop := eq (.Get "loop" | default "true") "true" }}
+{{ $muted := eq (.Get "muted" | default "true") "true" }}
+{{ $controls := eq (.Get "controls" | default "true") "true" }}
+{{ $poster := .Get "poster" | default "" }}
+
+{{ $is_remote := strings.HasPrefix $src "http" }}
+{{ $url := $src }}
+{{- if not $is_remote -}}
+  {{- $res := .Page.Resources.GetMatch $src -}}
+  {{- if $res -}}
+    {{- $url = $res.RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+
+{{ $poster_url := "" }}
+{{- if $poster -}}
+  {{- if strings.HasPrefix $poster "http" -}}
+    {{- $poster_url = $poster -}}
+  {{- else -}}
+    {{- $pres := .Page.Resources.GetMatch $poster -}}
+    {{- if $pres -}}
+      {{- $poster_url = $pres.RelPermalink -}}
+    {{- else -}}
+      {{- $poster_url = $poster -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+<figure class="video-figure" style="margin: 1.5rem auto; text-align: center;">
+  <div style="display: flex; justify-content: center;">
+    <video
+      style="width: {{ $width }}; max-width: {{ $max_width }}; height: auto; display: block; border-radius: 6px;"
+      {{ if $autoplay }}autoplay{{ end }}
+      {{ if $loop }}loop{{ end }}
+      {{ if $muted }}muted{{ end }}
+      {{ if $controls }}controls{{ end }}
+      playsinline
+      preload="metadata"
+      {{ with $poster_url }}poster="{{ . }}"{{ end }}>
+      <source src="{{ $url | safeURL }}" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+  {{- with $caption -}}
+    <figcaption style="margin-top: 0.75rem; color: #555; font-size: 0.95rem;">
+      {{ . | markdownify }}
+    </figcaption>
+  {{- end -}}
+</figure>

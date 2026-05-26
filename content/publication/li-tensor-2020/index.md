@@ -7,7 +7,7 @@ subtitle: ''
 summary: ''
 authors:
 - Ziyue Li
-- Nurettin Dorukhan Sergin
+- Nuretin Dorukhan Sergin
 - Hao Yan
 - Chen Zhang
 - Fugee Tsung
