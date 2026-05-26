@@ -70,7 +70,7 @@
 
 <figure {{ with .Get "class" }}class="{{.}}"{{end}} {{ with $id }}id="figure-{{ . }}"{{ end }}>
   <div class="d-flex justify-content-center">
-    <div class="w-100" {{- if ne (strings.TrimSpace $boxStyle) "" }} style="{{ strings.TrimSpace $boxStyle | safeCSS }}"{{ end }}>
+    <div class="w-100"{{- with $boxStyle }} style="{{ . | safeCSS }}"{{ end }}>
       {{- if $link -}}
         <a href="{{ $link }}" {{ if strings.HasPrefix $link "http" }} target="_blank" rel="noopener"{{ end }}>
       {{- end -}}
