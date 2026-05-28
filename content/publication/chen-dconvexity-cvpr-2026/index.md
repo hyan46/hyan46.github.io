@@ -132,9 +132,9 @@ The mapping below uses the **exact references from the CVPR 2026 paper**
 
 - **Half-disk / binary convexity characterization.**
   The indicator-mask condition $(u-1)(b_r\ast(2u-1))\geq 0$ proposed in
-  [Liu, Tai & Luo, *Convex Shape Prior for Deep Neural Convolution Network based Eye Fundus Images Segmentation*, 2020][liu2020],
-  [Luo, Tai & Wang, *A New Binary Representation Method for Shape Convexity*, Analysis & Applications 2022][luo2022], and
-  [Luo, Chen, Xiao & Tai, *A Binary Characterization Method for Shape Convexity*, Applied Mathematical Modelling 2023][luo2023]
+  [Liu, Tai & Luo, *Convex Shape Prior for Deep Neural Convolution Network based Eye Fundus Images Segmentation*, 2020](https://arxiv.org/abs/2005.07476),
+  [Luo, Tai & Wang, *A New Binary Representation Method for Shape Convexity*, Analysis & Applications 2022](https://doi.org/10.1142/S0219530521500238), and
+  [Luo, Chen, Xiao & Tai, *A Binary Characterization Method for Shape Convexity*, Applied Mathematical Modelling 2023](https://doi.org/10.1016/j.apm.2023.06.008)
   follows directly from our **first-order** supporting-hyperplane condition (Theorem 2): at a background
   pixel $\mathbf{y}$, Lemma 1 forces the foreground into the half-space
   $\nabla u(\mathbf{y})^{\top}(\mathbf{x}-\mathbf{y})\geq 0$, which intersected with a radius-$r$ disk
@@ -168,8 +168,8 @@ smoothness order ($C^0$ / $C^1$ / $C^2$) at which it operates.
 
 [han2020]: https://doi.org/10.1109/access.2020.2985095 "Han, Kwon, Kim & Cho. Noise-Robust Pupil Center Detection Through CNN-Based Segmentation With Shape-Prior Loss. IEEE Access, 2020."
 [liu2020]: https://arxiv.org/abs/2005.07476 "Liu, Tai & Luo. Convex Shape Prior for Deep Neural Convolution Network based Eye Fundus Images Segmentation. arXiv:2005.07476, 2020."
-[luo2022]: https://doi.org/10.1142/S0219530521500238 "Luo, Tai & Wang. A New Binary Representation Method for Shape Convexity and Application to Image Segmentation. Analysis & Applications, 2022."
-[luo2023]: https://doi.org/10.1016/j.apm.2023.05.011 "Luo, Chen, Xiao & Tai. A Binary Characterization Method for Shape Convexity and Applications. Applied Mathematical Modelling, 2023."
+[luo2022]: https://doi.org/10.1142/S0219530521500238
+[luo2023]: https://doi.org/10.1016/j.apm.2023.06.008
 [ukwatta2013]: https://doi.org/10.1117/12.2006787 "Ukwatta, Yuan, Qiu, Rajchl & Fenster. Efficient Convex Optimization-Based Curvature Dependent Contour Evolution. SPIE Medical Imaging, 2013."
 [yang2017]: https://doi.org/10.1109/ICIP.2017.8296678 "Yang, Shi, Yao & Li. A Level Set Method for Convexity Preserving Segmentation of Cardiac Left Ventricle. ICIP, 2017."
 [luo2019]: https://www.csd.uoc.gr/~hy471/papers/Convex_Shape_Prior_for_Multi-Object_Segmentation_ICCV_2019.pdf "Luo, Tai, Huo, Wang & Glowinski. Convex Shape Prior for Multi-Object Segmentation Using a Single Level Set Function. ICCV, 2019."

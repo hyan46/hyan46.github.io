@@ -37,7 +37,13 @@
 
             <div class="is-size-5">
               {{ range .Params.authors }}
-                <span class="author-block">{{ . }}</span>
+                <span class="author-block">
+                  {{ if eq . "Hao Yan" }}
+                    <a href="https://hyan46.github.io/" style="color: inherit;">Hao Yan</a>
+                  {{ else }}
+                    {{ . }}
+                  {{ end }}
+                </span>
               {{ end }}
             </div>
 

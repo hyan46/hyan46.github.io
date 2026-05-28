@@ -15,8 +15,29 @@ publication_types:
 publication: '*Proceedings of the International Conference on Machine Learning*'
 date: '2026-01-01'
 year: '2026'
-url_code: 'https://github.com/your-repo'
+url_code: 'https://github.com/BoyangASU/path-coupled-bellman-flows'
+url_pdf: 'https://arxiv.org/abs/2605.08253'
 ---
+
+{{< rawhtml >}}
+<p align="center">
+  <a href="https://arxiv.org/abs/2605.08253"><img src="https://img.shields.io/badge/arXiv-2605.08253-b31b1b.svg" alt="Paper"></a>
+  <a href="https://github.com/BoyangASU/path-coupled-bellman-flows"><img src="https://img.shields.io/badge/GitHub-Code-blue.svg" alt="Code"></a>
+  <a href="https://icml.cc"><img src="https://img.shields.io/badge/ICML-2026-4b44ce.svg" alt="ICML 2026"></a>
+</p>
+
+<p align="center">
+  <img src="figures/comparison.png" width="700">
+  <br>
+  <em><b>Figure 1.</b> Architecture of Path-Coupled Bellman Flows (PCBF). A shared noise variable is propagated along the Bellman path, producing a path-consistent flow-matching objective for return distributions.</em>
+</p>
+
+<p align="center">
+  <img src="figures/demo.gif" width="700">
+  <br>
+  <em><b>Figure 2.</b> Demonstration of the trained agent using Path-Coupled Bellman Flows on Discrete MC Environment.</em>
+</p>
+{{< /rawhtml >}}
 
 ## Abstract {#abstract}
 
@@ -28,9 +49,6 @@ method was accepted as a regular-track paper at ICML 2026.
 
 
 ## Method Overview {#method-overview}
-
-{{< figure src="figures/pcbf_valueflows_noise_comparison.png" alt="PCBF Architecture" caption="<span class=\"figure-number\">Figure 1: </span>Architecture of Path-Coupled Bellman Flows (PCBF). A shared noise variable is propagated along the Bellman path, producing a path-consistent flow-matching objective for return distributions." width="100%" >}}
-
 
 ## Key Ideas {#key-ideas}
 
@@ -51,28 +69,19 @@ method was accepted as a regular-track paper at ICML 2026.
 
 ## Toy Environments {#toy-environments}
 
-{{< figure src="figures/physics_combined.png" alt="Toy environments" caption="<span class=\"figure-number\">Figure 2: </span>Learned PCBF maps on toy environments. Left top (Solitaire); right top (Bernoulli); bottom (Discrete MC). PCBF recovers the ground-truth return distribution structure across all three settings." width="90%" >}}
+{{< figure src="figures/physics_combined.png" alt="Toy environments" caption="<span class=\"figure-number\">Figure 3: </span>Learned PCBF maps on toy environments. Left top (Solitaire); right top (Bernoulli); bottom (Discrete MC). PCBF recovers the ground-truth return distribution structure across all three settings." width="90%" >}}
 
-{{< figure src="figures/toy22.png" alt="CDF comparison on toy environments" caption="<span class=\"figure-number\">Figure 3: </span>Distributional accuracy comparison on toy environments. Learned return CDFs for PCBF and Value Flows (dcfm $\in \{0, 0.5, 1\}$) versus ground-truth references. PCBF tracks the ground-truth CDF more accurately, particularly in high-variance regimes." width="90%" >}}
+{{< figure src="figures/toy22.png" alt="CDF comparison on toy environments" caption="<span class=\"figure-number\">Figure 4: </span>Distributional accuracy comparison on toy environments. Learned return CDFs for PCBF and Value Flows (dcfm $\in \{0, 0.5, 1\}$) versus ground-truth references. PCBF tracks the ground-truth CDF more accurately, particularly in high-variance regimes." width="90%" >}}
 
 
 ## Path Consistency {#path-consistency}
 
-{{< figure src="figures/nfe.png" alt="NFE residual comparison" caption="<span class=\"figure-number\">Figure 4: </span>Corrected Bellman residual $r_{\mathrm{corr}}(t, N)$ on Solitaire Dice. Shared-noise PCBF (blue) maintains lower residuals than independent-noise coupling (orange) across diffusion times and function-evaluation budgets." width="80%" >}}
+{{< figure src="figures/nfe.png" alt="NFE residual comparison" caption="<span class=\"figure-number\">Figure 5: </span>Corrected Bellman residual $r_{\mathrm{corr}}(t, N)$ on Solitaire Dice. Shared-noise PCBF (blue) maintains lower residuals than independent-noise coupling (orange) across diffusion times and function-evaluation budgets." width="80%" >}}
 
 
 ## Offline RL Benchmarks {#offline-rl-benchmarks}
 
-{{< figure src="figures/ogbench.png" alt="OGBench results" caption="<span class=\"figure-number\">Figure 5: </span>Offline RL results on OGBench. PCBF achieves consistent improvements over distributional and non-distributional baselines across state-based and pixel-based domains." width="90%" >}}
-
-{{< figure src="figures/combined_final_curve.png" alt="Aggregate learning curves" caption="<span class=\"figure-number\">Figure 6: </span>Aggregate offline RL learning curves combining D4RL and OGBench tasks. PCBF (ours) shows faster convergence and higher final performance." width="90%" >}}
-
-
-## Ablations {#ablations}
-
-{{< figure src="figures/two_ablation.png" alt="Lambda ablation" caption="<span class=\"figure-number\">Figure 7: </span>Hyperparameter sensitivity analysis (PCBF vs. Value Flows) on Solitaire and Discrete MC. Increasing the Value-Flows consistency coefficient (orange, dashed) degrades distributional accuracy, while the PCBF control variate $\lambda$ (blue, solid) remains stable across a wide range of values." width="90%" >}}
-
-{{< figure src="figures/variance_reduction.png" alt="Variance reduction" caption="<span class=\"figure-number\">Figure 8: </span>Variance reduction via $\lambda$-parameterized control variates. The control variate substantially reduces estimator variance without introducing bias." width="80%" >}}
+{{< figure src="figures/ogbench.png" alt="OGBench results" caption="<span class=\"figure-number\">Figure 6: </span>Offline RL results on OGBench. PCBF achieves consistent improvements over distributional and non-distributional baselines across state-based and pixel-based domains." width="90%" >}}
 
 
 ## BibTeX {#bibtex}
