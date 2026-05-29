@@ -13,9 +13,11 @@ publication_types:
 publication: '*Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*'
 date: '2026-01-01'
 year: '2026'
+url: /chen-dconvexity-cvpr-2026/
 url_pdf: 'https://arxiv.org/abs/2605.19210v1'
 url_code: 'https://github.com/ShengzheC/D-Convexity'
-url_project: 'https://arxiv.org/abs/2605.19210v1'
+url_poster: 'https://cvpr.thecvf.com/virtual/2026/poster/39174'
+url_project: '/chen-dconvexity-cvpr-2026/'
 abstract: 'Convexity is a fundamental geometric prior that underlies many natural and man-made structures, yet remains challenging to impose effectively in end-to-end trainable segmentation networks. We revisit convexity from a functional perspective and propose a unified, threshold-free convexity prior based on the quasi-concavity of the network''s output mask function u. The first and second-order formulations produce a compact convolutional loss that can be densely applied across the image without thresholding, and integrate seamlessly with modern segmentation networks via the proposed Convex Gradient Projection Module (CGPM).'
 summary: 'A unified, threshold-free differentiable convex-shape prior based on quasi-concavity of the segmentation mask function. Zero-, first-, and second-order characterizations yield a midpoint convexification algorithm and compact convolutional losses that integrate seamlessly with modern segmentation networks via the proposed Convex Gradient Projection Module (CGPM). Accepted to CVPR 2026 as a Highlight.'
 ---
@@ -32,9 +34,11 @@ characterizations that turn a hard global geometric constraint into local, diffe
 inequalities, yielding a compact convolutional loss and a drop-in **Convex Gradient
 Projection Module (CGPM)**.
 
-Accepted at **CVPR 2026** as a **Highlight paper** (top 3%).
+Accepted at **[CVPR 2026](https://cvpr.thecvf.com/virtual/2026/poster/39174)** as a **Highlight paper** (top 3%).
 
-{{< figure src="figures/architecture.png" alt="D-Convexity architecture: Swin Transformer backbone produces a feature map o, which is passed through a sigmoid to give a raw mask u. The Convex Gradient Projection Module (CGPM) then iteratively projects u onto the quasi-concave manifold using the convex loss gradient, yielding a strictly convex final mask. Training uses cross-entropy on the raw mask and the quasi-concavity loss on the projected mask." caption="<span class=\"figure-number\">Figure 1: </span>Overall framework. A Swin-Transformer encoder–decoder backbone produces feature $o$; a sigmoid yields the raw mask $u=\\mathcal{S}(o)$. The **Convex Gradient Projection Module (CGPM)** is an unrolled gradient-descent block ($v^0\\!\\rightarrow\\!v^1\\!\\rightarrow\\!\\cdots\\!\\rightarrow\\!v^T$) that projects $u$ onto the quasi-concave manifold by descending the convex loss $\\nabla\\mathcal{L}_{\\text{convex}}$. The network is trained with cross-entropy $\\mathcal{L}_{CE}$ on the raw mask and the quasi-concavity loss $\\mathcal{L}_{\\text{convex}}$ on the projected mask." width="100%" >}}
+{{< figure src="figures/architecture.png" alt="D-Convexity architecture: Swin Transformer backbone produces a feature map o, which is passed through a sigmoid to give a raw mask u. The Convex Gradient Projection Module (CGPM) then iteratively projects u onto the quasi-concave manifold using the convex loss gradient, yielding a strictly convex final mask. Training uses cross-entropy on the raw mask and the quasi-concavity loss on the projected mask." width="100%" >}}
+
+<p class="has-text-centered" style="max-width:900px;margin:0.5rem auto 1.5rem;font-size:0.95rem;color:#444;"><span class="figure-number">Figure 1:</span> Overall framework. A Swin-Transformer encoder–decoder backbone produces feature $o$; a sigmoid yields the raw mask $u=\mathcal{S}(o)$. The <strong>Convex Gradient Projection Module (CGPM)</strong> is an unrolled gradient-descent block ($v^0 \rightarrow v^1 \rightarrow \cdots \rightarrow v^T$) that projects $u$ onto the quasi-concave manifold by descending the convex loss $\nabla\mathcal{L}_{\mathrm{convex}}$. The network is trained with cross-entropy $\mathcal{L}_{\mathrm{CE}}$ on the raw mask and the quasi-concavity loss $\mathcal{L}_{\mathrm{convex}}$ on the projected mask.</p>
 
 ---
 
@@ -80,7 +84,9 @@ $$
 u \text{ is quasi-concave} \;\Longleftrightarrow\; \forall \gamma,\; S_\gamma=\{\mathbf{x}\mid u(\mathbf{x})\geq\gamma\}\ \text{is convex}.
 $$
 
-{{< figure src="figures/quasi_concave.png" alt="Left: a concave function lies below its tangent plane everywhere. Right: a quasi-concave function may be steeper than any tangent plane, but every horizontal slice (super-level set) is still a convex region. The gradient at a level-set point x defines the supporting hyperplane (y-x) perpendicular to grad u." caption="<span class=\"figure-number\">Figure 2: </span>**Concave vs. quasi-concave functions.** A concave function (left) lies below every tangent plane — a *strong* property that most segmentation masks violate. A **quasi-concave** function (right) is the weaker, *threshold-free* notion D-Convexity uses: it only requires that every super-level set $S_\\gamma$ be a convex region. At any boundary point $\\mathbf{x}$, the supporting hyperplane is given by $\\nabla u(\\mathbf{x})^{\\top}(\\mathbf{y}-\\mathbf{x})=0$ — this is the geometric content of our **first-order condition**." width="80%" >}}
+{{< figure src="figures/quasi_concave.png" alt="Left: a concave function lies below its tangent plane everywhere. Right: a quasi-concave function may be steeper than any tangent plane, but every horizontal slice (super-level set) is still a convex region. The gradient at a level-set point x defines the supporting hyperplane (y-x) perpendicular to grad u." width="80%" >}}
+
+<p class="has-text-centered" style="max-width:900px;margin:0.5rem auto 1.5rem;font-size:0.95rem;color:#444;"><span class="figure-number">Figure 2:</span> <strong>Concave vs. quasi-concave functions.</strong> A concave function (left) lies below every tangent plane — a <em>strong</em> property that most segmentation masks violate. A <strong>quasi-concave</strong> function (right) is the weaker, <em>threshold-free</em> notion D-Convexity uses: it only requires that every super-level set $S_\gamma$ be a convex region. At any boundary point $\mathbf{x}$, the supporting hyperplane is given by $\nabla u(\mathbf{x})^{\top}(\mathbf{y}-\mathbf{x})=0$ — this is the geometric content of our <strong>first-order condition</strong>.</p>
 
 By considering different smoothness assumptions on $u$, we derive three equivalent (or
 sufficient) characterizations:
@@ -433,6 +439,7 @@ losses in `loss.py`.
 
 - **Paper (arXiv):** [arXiv:2605.19210](https://arxiv.org/abs/2605.19210v1)
 - **Code:** [github.com/ShengzheC/D-Convexity](https://github.com/ShengzheC/D-Convexity)
+- **CVPR 2026 virtual poster:** [cvpr.thecvf.com/virtual/2026/poster/39174](https://cvpr.thecvf.com/virtual/2026/poster/39174)
 - **Venue:** CVPR 2026 (Highlight, top 3%)
 
 ---

@@ -65,6 +65,14 @@
               </span>
               {{ end }}
 
+              {{ if .Params.url_poster }}
+              <span class="link-block">
+                <a href="{{ .Params.url_poster }}" class="button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-image"></i></span><span>CVPR Poster</span>
+                </a>
+              </span>
+              {{ end }}
+
               {{ if .Params.url_video }}
               <span class="link-block">
                 <a href="{{ .Params.url_video }}" class="button is-normal is-rounded is-dark">
