@@ -447,15 +447,12 @@ losses in `loss.py`.
 ## BibTeX {#bibtex}
 
 ```bibtex
-@inproceedings{chen2026dconvexity,
-  title     = {D-Convexity: A Unified Differentiable Convex Shape Prior via Quasi-Concavity for Data-driven Image Segmentation},
-  author    = {Chen, Shengzhe and Yan, Hao},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year      = {2026},
-  note      = {Accepted as Highlight (top 3\%)},
-  eprint    = {2605.19210},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.CV},
-  url       = {https://arxiv.org/abs/2605.19210v1}
+@InProceedings{Chen_2026_CVPR,
+    author    = {Chen, Shengzhe and Yan, Hao},
+    title     = {D-Convexity: A Unified Differentiable Convex Shape Prior via Quasi-Concavity for Data-driven Image Segmentation},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2026},
+    pages     = {34755-34764}
 }
 ```

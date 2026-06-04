@@ -101,7 +101,7 @@ def parse_bib(path: Path) -> list[dict]:
 # Canonical EXPORT slug per bib key (matches existing Hugo / prior Org exports).
 SLUG = {
     "xu2026pathcoupled": "xu-path-coupled-icml-2026",
-    "chen2026dconvexity": "chen-dconvexity-cvpr-2026",
+    "Chen_2026_CVPR": "chen-dconvexity-cvpr-2026",
     "rathnakumar2026bayesian": "rathnakumar-benn-ress-2026",
     "huang2025multi": "huang-multimodal-case-2025",
     "hu2025personalized": "hu-personalized-tucker-2025",
