@@ -1,13 +1,4 @@
 ---
-title: "Featured Publications"
-author: ["Hao Yan"]
-tags: ["Software"]
-draft: false
----
-
-```yaml
-# Homepage widget order: lower weight = higher on page.
-# Keep weight < 50 so this block appears above Current/Graduated Students (50–51).
 widget: featured
 active: true
 headless: true
@@ -26,4 +17,4 @@ content:
   order: desc
 design:
   view: card
-```
+---
