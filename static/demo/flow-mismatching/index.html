@@ -78,6 +78,36 @@ body{
   color: var(--muted);
   text-transform: uppercase;
 }
+.header-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.dataset-select{
+  display: flex;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+.dataset-btn{
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+.dataset-btn.active{
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
 h1{
   font-family: var(--font-display);
   font-weight: 800;
@@ -256,8 +286,12 @@ footer strong{ color: var(--fg); font-weight: 600; }
 </head>
 <body>
 <div class="page">
-  <div>
+  <div class="header-row">
     <div class="eyebrow">Unsupervised anomaly detection &middot; Flow Mismatching</div>
+    <div class="dataset-select" role="group" aria-label="Toy dataset">
+      <button class="dataset-btn active" data-src="data.json">3-cluster GMM</button>
+      <button class="dataset-btn" data-src="data_halfmoon.json">Half-moon</button>
+    </div>
   </div>
 
   <div class="stage">
@@ -325,7 +359,8 @@ footer strong{ color: var(--fg); font-weight: 600; }
     scoreAnom: document.getElementById('score-anom'),
     scrub: document.getElementById('scrub'),
     playBtn: document.getElementById('playBtn'),
-    tLabel: document.getElementById('tLabel')
+    tLabel: document.getElementById('tLabel'),
+    datasetBtns: Array.prototype.slice.call(document.querySelectorAll('.dataset-btn'))
   };
 
   var scenes = {};   // kind -> {canvas, ctx, w, h}
@@ -735,20 +770,40 @@ footer strong{ color: var(--fg); font-weight: 600; }
 
   window.addEventListener('resize', resizeAll);
 
-  fetch('data.json').then(function(r){ return r.json(); }).then(function(data){
-    state.data = data;
-    els.scrub.max = data.ts.length - 1;
-    state.bounds = computeBounds(data);
-    var allAnomScores = [].concat.apply([], data.score_anom);
-    state.globalScoreMax = Math.max.apply(null, allAnomScores) * 1.08;
-    var heatSorted = data.heatmap_score.slice().sort(function(a, b){ return a - b; });
-    state.heatMaxRef = heatSorted[Math.floor(heatSorted.length * 0.9)];
-    state.heatCanvasNormal = buildHeatCanvas(data, css('--accent-normal'), state.heatMaxRef);
-    state.heatCanvasAnom = buildHeatCanvas(data, css('--accent-anom'), state.heatMaxRef);
-    resizeAll();
-    requestAnimationFrame(tick);
-    window.__ready = true;   // signal for headless frame-capture tooling
-  });
+  function loadDataset(url){
+    window.__ready = false;
+    return fetch(url).then(function(r){ return r.json(); }).then(function(data){
+      state.data = data;
+      state.frame = 0;
+      state.holding = false;
+      state.playing = true;
+      els.playBtn.textContent = 'Pause';
+      els.scrub.max = data.ts.length - 1;
+      state.bounds = computeBounds(data);
+      var allAnomScores = [].concat.apply([], data.score_anom);
+      state.globalScoreMax = Math.max.apply(null, allAnomScores) * 1.08;
+      var heatSorted = data.heatmap_score.slice().sort(function(a, b){ return a - b; });
+      state.heatMaxRef = heatSorted[Math.floor(heatSorted.length * 0.9)];
+      state.heatCanvasNormal = buildHeatCanvas(data, css('--accent-normal'), state.heatMaxRef);
+      state.heatCanvasAnom = buildHeatCanvas(data, css('--accent-anom'), state.heatMaxRef);
+      resizeAll();
+      window.__ready = true;   // signal for headless frame-capture tooling
+    });
+  }
+
+  if (els.datasetBtns){
+    els.datasetBtns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (btn.classList.contains('active')) return;
+        els.datasetBtns.forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        loadDataset(btn.getAttribute('data-src'));
+      });
+    });
+  }
+
+  loadDataset('data.json');
+  requestAnimationFrame(tick);
 })();
 </script>
 </body>

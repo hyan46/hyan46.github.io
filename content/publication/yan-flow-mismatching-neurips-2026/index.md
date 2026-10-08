@@ -58,7 +58,9 @@ the anomaly signal.
 
 {{< video src="figures/flow_mismatching_demo.mp4" caption="<span class=\"figure-number\">Video 1: </span>Predicted-vs-true velocity mismatch over time for a normal-target vs. off-manifold-target flow (two panels), with a cumulative mismatch-score comparison and an end-of-loop anomaly-score landscape reveal." width="100%" max_width="980px" >}}
 
-**Try it yourself** — play/pause, scrub through time, and watch the comparison update live:
+**Try it yourself** — play/pause, scrub through time, and switch between a 3-cluster
+mixture (the video above) and a half-moon manifold with a genuinely near-manifold
+anomaly (a harder, more subtle detection case than an off-manifold gap point):
 
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
