@@ -60,6 +60,22 @@ off-manifold gap point):
 </div>
 {{< /rawhtml >}}
 
+### Bias-variance trade-off across ODE time {#bias-variance}
+
+Flow Mismatching aggregates the velocity mismatch across many ODE times $t$
+rather than reading it off a single $t$, because the mismatch signal itself
+trades bias for variance as $t$ varies. The figure below reproduces the
+paper's own semicircle toy analysis (Appendix B.1): at small $t$,
+interpolated states are dominated by source noise, so the low-mismatch
+region is a broad blob covering the manifold's interior — biased and poorly
+localized. At large $t$, the low-mismatch region localizes tightly to the
+manifold but becomes visibly speckled — high variance, since late-time states
+are far more sensitive to the specific noise draw. The paper's
+$w(t) = t^2$-weighted combination over time balances the two regimes,
+yielding a score map that is both sharp and smooth.
+
+{{< figure src="figures/bias_variance_toy.png" alt="Flow-mismatch anomaly score maps on the semicircle toy at five ODE times t = 0.01, 0.25, 0.5, 0.75, 0.99, plus the time-weighted combination. Small t gives a broad, poorly-localized low-score blob (bias); large t localizes tightly to the manifold but is speckled (variance); the weighted combination is sharp and smooth." caption="**Bias-variance trade-off across ODE time.** Darker = lower normalized flow mismatch. The blue arc is the normal manifold (upper semicircle, center (0,3), radius 5)." width="100%" >}}
+
 ---
 
 ## Resources {#resources}
