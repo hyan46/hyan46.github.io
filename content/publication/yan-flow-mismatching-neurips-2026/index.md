@@ -74,7 +74,19 @@ are far more sensitive to the specific noise draw. The paper's
 $w(t) = t^2$-weighted combination over time balances the two regimes,
 yielding a score map that is both sharp and smooth.
 
-{{< figure src="figures/bias_variance_toy.png" alt="Flow-mismatch anomaly score maps on the semicircle toy at five ODE times t = 0.01, 0.25, 0.5, 0.75, 0.99, plus the time-weighted combination. Small t gives a broad, poorly-localized low-score blob (bias); large t localizes tightly to the manifold but is speckled (variance); the weighted combination is sharp and smooth." caption="**Bias-variance trade-off across ODE time.** Darker = lower normalized flow mismatch. The blue arc is the normal manifold (upper semicircle, center (0,3), radius 5)." width="100%" >}}
+**Drag the slider** to step through the landscape at each $t$, then past the end for
+the weighted-combined view:
+
+{{< rawhtml >}}
+<div style="max-width:900px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
+  <iframe
+    src="/demo/bias-variance/index.html"
+    title="Bias-variance trade-off across ODE time, interactive demo"
+    style="width:100%;aspect-ratio:900/1038;border:none;display:block;"
+    loading="lazy">
+  </iframe>
+</div>
+{{< /rawhtml >}}
 
 ---
 
