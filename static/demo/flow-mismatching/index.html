@@ -425,24 +425,37 @@ footer strong{ color: var(--fg); font-weight: 600; }
     return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
   }
 
+  // matplotlib's 'hot' colormap: black (low) -> red -> orange/yellow -> white (high) --
+  // matches the paper's own figure convention (figure/mismatch_combined.png), so the
+  // live widget's heatmap reveal looks like the same instrument as the static figure.
+  function hotColor(v){
+    v = Math.max(0, Math.min(1, v));
+    var r, g, b;
+    if (v < 0.365){ r = v / 0.365; g = 0; b = 0; }
+    else if (v < 0.746){ r = 1; g = (v - 0.365) / (0.746 - 0.365); b = 0; }
+    else { r = 1; g = 1; b = (v - 0.746) / (1 - 0.746); }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+
   // builds a tiny NX x NY offscreen bitmap, one texel per heatmap grid cell, then relies
   // on the browser's own bilinear upscaling (drawImage + imageSmoothingEnabled) to turn
-  // the coarse grid into a continuous field -- no per-cell hard edges.
-  function buildHeatCanvas(data, colorHex, heatMaxRef){
+  // the coarse grid into a continuous field -- no per-cell hard edges. Darker = lower
+  // normalized flow mismatch, same convention as the paper's figure.
+  function buildHeatCanvas(data, heatLo, heatHi){
     var nx = data.heat_grid_nx, ny = data.heat_grid_ny;
     var off = document.createElement('canvas');
     off.width = nx; off.height = ny;
     var octx = off.getContext('2d');
     var img = octx.createImageData(nx, ny);
-    var rgb = hexToRgb(colorHex);
+    var span = Math.max(heatHi - heatLo, 1e-9);
     for (var row = 0; row < ny; row++){
       var worldRow = ny - 1 - row;   // flip: image row 0 = top = largest world y
       for (var col = 0; col < nx; col++){
         var idx = worldRow * nx + col;
-        var v = Math.max(0, Math.min(1, data.heatmap_score[idx] / heatMaxRef));
-        var a = Math.round((0.10 + v * 0.85) * 255);
+        var v = Math.max(0, Math.min(1, (data.heatmap_score[idx] - heatLo) / span));
+        var rgb = hotColor(v);
         var p = (row * nx + col) * 4;
-        img.data[p] = rgb.r; img.data[p + 1] = rgb.g; img.data[p + 2] = rgb.b; img.data[p + 3] = a;
+        img.data[p] = rgb.r; img.data[p + 1] = rgb.g; img.data[p + 2] = rgb.b; img.data[p + 3] = 255;
       }
     }
     octx.putImageData(img, 0, 0);
@@ -499,27 +512,46 @@ footer strong{ color: var(--fg); font-weight: 600; }
     var gridColor = css('--grid');
     var accent = kind === 'normal' ? css('--accent-normal') : css('--accent-anom');
 
-    // learned-manifold point cloud
-    ctx.fillStyle = css('--cloud-dot');
-    data.cloud.forEach(function(pt){
-      var p = worldToPx(pt, w, h, b);
-      ctx.beginPath();
-      ctx.arc(p[0], p[1], 1.7, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
     var lastFrame = data.ts.length - 1;
     var atEnd = state.frame >= lastFrame;
+
+    // learned-manifold point cloud -- shown only during the live path animation;
+    // at the final/heatmap-reveal frame the manifold is instead traced as a blue
+    // arc (paper style), so the two don't visually compete.
+    if (!atEnd){
+      ctx.fillStyle = css('--cloud-dot');
+      data.cloud.forEach(function(pt){
+        var p = worldToPx(pt, w, h, b);
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], 1.7, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
 
     if (atEnd){
       // reveal, at the final frame: the anomaly-score landscape H(y) across the whole plane,
       // as a continuous field (bilinearly upscaled from a dense grid, no hard cell edges) --
       // evaluated for every point as a candidate target, not just the two highlighted ones.
-      var heatCanvas = kind === 'normal' ? state.heatCanvasNormal : state.heatCanvasAnom;
-      if (heatCanvas){
+      // Same instrument in both panels (the landscape doesn't depend on which target is
+      // highlighted), rendered with the paper's own colormap convention.
+      if (state.heatCanvas){
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(heatCanvas, 0, 0, heatCanvas.width, heatCanvas.height, 0, 0, w, h);
+        ctx.drawImage(state.heatCanvas, 0, 0, state.heatCanvas.width, state.heatCanvas.height, 0, 0, w, h);
+      }
+      if (data.manifold_curve && data.manifold_curve.length){
+        ctx.save();
+        ctx.strokeStyle = '#2f6fed';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        data.manifold_curve.forEach(function(pt, i){
+          var p = worldToPx(pt, w, h, b);
+          if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+        });
+        ctx.stroke();
+        ctx.restore();
       }
     } else {
       // background velocity-field quiver: the network's actual v_theta(x,t), sampled on a
@@ -786,10 +818,20 @@ footer strong{ color: var(--fg); font-weight: 600; }
       state.bounds = computeBounds(data);
       var allAnomScores = [].concat.apply([], data.score_anom);
       state.globalScoreMax = Math.max.apply(null, allAnomScores) * 1.08;
-      var heatSorted = data.heatmap_score.slice().sort(function(a, b){ return a - b; });
-      state.heatMaxRef = heatSorted[Math.floor(heatSorted.length * 0.9)];
-      state.heatCanvasNormal = buildHeatCanvas(data, css('--accent-normal'), state.heatMaxRef);
-      state.heatCanvasAnom = buildHeatCanvas(data, css('--accent-anom'), state.heatMaxRef);
+      // linear 1st/99th-percentile remap, matching the paper's own normalization
+      // (numerical_2d_flow_mismatch.py's norm01) -- NOT a single-percentile divisor,
+      // which left mid-range off-manifold scores reading as dark instead of resolving
+      // toward the bright end of the colormap.
+      var heatLo = data.heat_lo, heatHi = data.heat_hi;
+      if (heatLo == null || heatHi == null){
+        var heatSorted = data.heatmap_score.slice().sort(function(a, b){ return a - b; });
+        var n = heatSorted.length;
+        heatLo = heatSorted[Math.max(0, Math.floor(n * 0.01))];
+        heatHi = heatSorted[Math.min(n - 1, Math.floor(n * 0.99))];
+      }
+      state.heatLo = heatLo;
+      state.heatHi = heatHi;
+      state.heatCanvas = buildHeatCanvas(data, heatLo, heatHi);
       resizeAll();
       window.__ready = true;   // signal for headless frame-capture tooling
     });
