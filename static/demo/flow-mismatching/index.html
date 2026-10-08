@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Mismatching</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* layout: header, two-panel stage (scene canvas + score readout each), shared transport bar below */
+:root{
+  color-scheme: dark;
+  --bg: #0b0e14;
+  --surface: #131826;
+  --surface-2: #171d2d;
+  --fg: #eceff4;
+  --muted: #8b93a6;
+  --border: rgba(255,255,255,0.09);
+  --accent-normal: #1e9484;
+  --accent-anom: #d8573a;
+  --grid: rgba(255,255,255,0.15);
+  --cloud-dot: rgba(236,239,244,0.62);
+  --dir-arrow: #ffd166;
+  --font-display: 'Big Shoulders Display', sans-serif;
+  --font-body: 'Source Sans 3', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme: light;
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --surface-2: #faf8f4;
+    --fg: #1b1f27;
+    --muted: #666f80;
+    --border: rgba(20,20,30,0.10);
+    --accent-normal: #0f8a76;
+    --accent-anom: #c24e2e;
+    --grid: rgba(20,20,30,0.14);
+    --cloud-dot: rgba(27,31,39,0.55);
+    --dir-arrow: #a66a00;
+  }
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #faf8f4;
+  --fg: #1b1f27;
+  --muted: #666f80;
+  --border: rgba(20,20,30,0.10);
+  --accent-normal: #0f8a76;
+  --accent-anom: #c24e2e;
+  --grid: rgba(20,20,30,0.14);
+  --cloud-dot: rgba(27,31,39,0.55);
+  --dir-arrow: #a66a00;
+}
+
+*{ box-sizing: border-box; }
+body{
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  padding-inline: 16px;
+}
+.page{
+  max-width: 1500px;
+  margin: 0 auto;
+  padding-block: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.eyebrow{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+h1{
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(40px, 8vw, 68px);
+  line-height: 0.95;
+  margin: 6px 0 10px;
+  text-wrap: balance;
+}
+.sub{
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 62ch;
+  margin: 0;
+}
+.stage{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 720px){
+  .stage{ grid-template-columns: 1fr; }
+}
+.panel{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.panel-head{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-head h2{
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0;
+}
+.legend{
+  display: flex;
+  gap: 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.legend span{ display: inline-flex; align-items: center; gap: 5px; }
+.legend i{
+  display: inline-block;
+  width: 14px; height: 0;
+  border-top: 2px solid currentColor;
+}
+.legend i.dashed{ border-top-style: dashed; }
+.panel[data-kind="normal"] .legend i:not(.dashed){ border-top-color: var(--accent-normal); }
+.panel[data-kind="anom"] .legend i:not(.dashed){ border-top-color: var(--accent-anom); }
+.dot{
+  width: 9px; height: 9px; border-radius: 50%;
+  flex: none;
+}
+.dot-normal{ background: var(--accent-normal); }
+.dot-anom{ background: var(--accent-anom); }
+.scene-wrap{
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.3 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+canvas.scene{ width: 100%; height: 100%; display: block; }
+.readout{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.readout-text{ flex: none; min-width: 108px; }
+.readout-label{
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.readout-value{
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.panel[data-kind="normal"] .readout-value{ color: var(--accent-normal); }
+.panel[data-kind="anom"] .readout-value{ color: var(--accent-anom); }
+.compare{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.compare-head{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compare-head h2{
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0;
+}
+.compare-legend{
+  display: flex;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.compare-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+.swatch{
+  display: inline-block;
+  width: 14px; height: 2px;
+  border-radius: 1px;
+}
+.swatch-normal{ background: var(--accent-normal); }
+.swatch-anom{ background: var(--accent-anom); }
+canvas.compare-canvas{ width: 100%; height: 220px; display: block; }
+.transport{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+button.transport-btn{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  flex: none;
+}
+button.transport-btn:hover{ border-color: var(--muted); }
+input[type="range"]{
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent-anom);
+}
+.t-label{
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--muted);
+  min-width: 64px;
+  text-align: right;
+  flex: none;
+}
+footer p{
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 68ch;
+  margin: 0;
+}
+footer strong{ color: var(--fg); font-weight: 600; }
+</style>
+
+</head>
+<body>
+<div class="page">
+  <div>
+    <div class="eyebrow">Unsupervised anomaly detection &middot; Flow Mismatching</div>
+  </div>
+
+  <div class="stage">
+    <div class="panel" data-kind="normal">
+      <div class="panel-head">
+        <span class="dot dot-normal"></span><h2>Normal target</h2>
+        <span class="legend"><span><i></i>predicted</span><span><i class="dashed"></i>true heading</span></span>
+      </div>
+      <div class="scene-wrap"><canvas class="scene" data-kind="normal"></canvas></div>
+      <div class="readout">
+        <div class="readout-text">
+          <div class="readout-label">Avg. mismatch, 4 paths</div>
+          <div class="readout-value" id="score-normal">0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-kind="anom">
+      <div class="panel-head">
+        <span class="dot dot-anom"></span><h2>Off&#8209;manifold target</h2>
+        <span class="legend"><span><i></i>predicted</span><span><i class="dashed"></i>true heading</span></span>
+      </div>
+      <div class="scene-wrap"><canvas class="scene" data-kind="anom"></canvas></div>
+      <div class="readout">
+        <div class="readout-text">
+          <div class="readout-label">Avg. mismatch, 4 paths</div>
+          <div class="readout-value" id="score-anom">0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare">
+    <canvas class="compare-canvas" id="compareCanvas"></canvas>
+  </div>
+
+  <div class="transport">
+    <button class="transport-btn" id="playBtn">Pause</button>
+    <input type="range" id="scrub" min="0" max="95" value="0" step="1" aria-label="Timeline">
+    <div class="t-label" id="tLabel">t = 0.00</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var FRAME_MS = 85;      // ms per timestep during playback
+  var HOLD_MS = 1200;     // pause at t=1 before looping
+
+  var state = {
+    data: null,
+    frame: 0,
+    playing: true,
+    lastTick: 0,
+    holding: false,
+    holdUntil: 0,
+    bounds: null,
+    globalScoreMax: 1,
+    heatMaxRef: 1
+  };
+
+  var els = {
+    scoreNormal: document.getElementById('score-normal'),
+    scoreAnom: document.getElementById('score-anom'),
+    scrub: document.getElementById('scrub'),
+    playBtn: document.getElementById('playBtn'),
+    tLabel: document.getElementById('tLabel')
+  };
+
+  var scenes = {};   // kind -> {canvas, ctx, w, h}
+  var compareChart = null;   // {canvas, ctx, w, h}
+
+  function setupCanvas(canvas){
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    var rect = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(rect.width));
+    var h = Math.max(1, Math.round(rect.height));
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function resizeAll(){
+    ['normal', 'anom'].forEach(function(kind){
+      var sceneCanvas = document.querySelector('canvas.scene[data-kind="' + kind + '"]');
+      var s = setupCanvas(sceneCanvas);
+      scenes[kind] = { canvas: sceneCanvas, ctx: s.ctx, w: s.w, h: s.h };
+    });
+    var compareCanvas = document.getElementById('compareCanvas');
+    var c = setupCanvas(compareCanvas);
+    compareChart = { canvas: compareCanvas, ctx: c.ctx, w: c.w, h: c.h };
+    render();
+  }
+
+  function computeBounds(data){
+    var xs = [], ys = [];
+    function add(pt){ xs.push(pt[0]); ys.push(pt[1]); }
+    data.cloud.forEach(add);
+    data.xt_normal.forEach(function(path){ path.forEach(add); });
+    data.xt_anom.forEach(function(path){ path.forEach(add); });
+    data.bg_paths.forEach(function(path){ path.forEach(add); });
+    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+    var padX = (maxX - minX) * 0.08, padY = (maxY - minY) * 0.08;
+    return { minX: minX - padX, maxX: maxX + padX, minY: minY - padY, maxY: maxY + padY };
+  }
+
+  function worldToPx(pt, w, h, b){
+    // y flipped (screen-down vs math-up)
+    var x = (pt[0] - b.minX) / (b.maxX - b.minX) * w;
+    var y = h - (pt[1] - b.minY) / (b.maxY - b.minY) * h;
+    return [x, y];
+  }
+
+  function css(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
+  function hexToRgb(hex){
+    hex = hex.replace('#', '');
+    if (hex.length === 3){ hex = hex.split('').map(function(c){ return c + c; }).join(''); }
+    var n = parseInt(hex, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  // builds a tiny NX x NY offscreen bitmap, one texel per heatmap grid cell, then relies
+  // on the browser's own bilinear upscaling (drawImage + imageSmoothingEnabled) to turn
+  // the coarse grid into a continuous field -- no per-cell hard edges.
+  function buildHeatCanvas(data, colorHex, heatMaxRef){
+    var nx = data.heat_grid_nx, ny = data.heat_grid_ny;
+    var off = document.createElement('canvas');
+    off.width = nx; off.height = ny;
+    var octx = off.getContext('2d');
+    var img = octx.createImageData(nx, ny);
+    var rgb = hexToRgb(colorHex);
+    for (var row = 0; row < ny; row++){
+      var worldRow = ny - 1 - row;   // flip: image row 0 = top = largest world y
+      for (var col = 0; col < nx; col++){
+        var idx = worldRow * nx + col;
+        var v = Math.max(0, Math.min(1, data.heatmap_score[idx] / heatMaxRef));
+        var a = Math.round((0.10 + v * 0.85) * 255);
+        var p = (row * nx + col) * 4;
+        img.data[p] = rgb.r; img.data[p + 1] = rgb.g; img.data[p + 2] = rgb.b; img.data[p + 3] = a;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    return off;
+  }
+
+  var REF_MAG = 6;        // typical field magnitude, for arrow-length scaling
+  var QUIVER_LEN = 13;    // px, at REF_MAG
+  var HERO_LEN = 46;      // px, at REF_MAG -- hero arrows drawn much larger for emphasis
+
+  function drawArrow(ctx, x, y, vx, vy, baseLen, color, opts){
+    opts = opts || {};
+    var mag = Math.sqrt(vx * vx + vy * vy);
+    if (mag < 1e-6) return;
+    var minScale = opts.minScale != null ? opts.minScale : 0.3;
+    var maxScale = opts.maxScale != null ? opts.maxScale : 1.5;
+    var scale = Math.max(minScale, Math.min(maxScale, mag / REF_MAG));
+    var len = baseLen * scale;
+    var ux = vx / mag, uy = vy / mag;
+    // screen y is flipped relative to world y
+    var ex = x + ux * len, ey = y - uy * len;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = opts.lineWidth || 1.2;
+    ctx.globalAlpha = opts.alpha != null ? opts.alpha : 1;
+    if (opts.dash) ctx.setLineDash(opts.dash);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (opts.head !== false){
+      var headLen = Math.max(3, len * 0.28);
+      var ang = Math.atan2(ey - y, ex - x);
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - headLen * Math.cos(ang - 0.5), ey - headLen * Math.sin(ang - 0.5));
+      ctx.lineTo(ex - headLen * Math.cos(ang + 0.5), ey - headLen * Math.sin(ang + 0.5));
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawScene(kind){
+    var s = scenes[kind];
+    if (!s || !state.data) return;
+    var ctx = s.ctx, w = s.w, h = s.h, b = state.bounds, data = state.data;
+    ctx.clearRect(0, 0, w, h);
+
+    var gridColor = css('--grid');
+    var accent = kind === 'normal' ? css('--accent-normal') : css('--accent-anom');
+
+    // learned-manifold point cloud
+    ctx.fillStyle = css('--cloud-dot');
+    data.cloud.forEach(function(pt){
+      var p = worldToPx(pt, w, h, b);
+      ctx.beginPath();
+      ctx.arc(p[0], p[1], 1.7, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    var lastFrame = data.ts.length - 1;
+    var atEnd = state.frame >= lastFrame;
+
+    if (atEnd){
+      // reveal, at the final frame: the anomaly-score landscape H(y) across the whole plane,
+      // as a continuous field (bilinearly upscaled from a dense grid, no hard cell edges) --
+      // evaluated for every point as a candidate target, not just the two highlighted ones.
+      var heatCanvas = kind === 'normal' ? state.heatCanvasNormal : state.heatCanvasAnom;
+      if (heatCanvas){
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(heatCanvas, 0, 0, heatCanvas.width, heatCanvas.height, 0, 0, w, h);
+      }
+    } else {
+      // background velocity-field quiver: the network's actual v_theta(x,t), sampled on a
+      // grid at the current t -- this is the field the hero point is moving through.
+      var fFrame = Math.min(state.frame, data.field_over_time.length - 1);
+      var fieldNow = data.field_over_time[fFrame];
+      data.grid_points.forEach(function(gp, i){
+        var p = worldToPx(gp, w, h, b);
+        var v = fieldNow[i];
+        drawArrow(ctx, p[0], p[1], v[0], v[1], QUIVER_LEN, gridColor, { lineWidth: 1, alpha: 0.85, head: true });
+      });
+    }
+
+    var xtAll = kind === 'normal' ? data.xt_normal : data.xt_anom;
+    var targets = kind === 'normal' ? data.y_normal_list : data.y_anom_list;
+    var mismatchAll = kind === 'normal' ? data.mismatch_normal : data.mismatch_anom;
+    var vPredAll = kind === 'normal' ? data.v_pred_normal : data.v_pred_anom;
+
+    xtAll.forEach(function(xt, k){
+      var isPrimary = k === 0;
+      var mismatch = mismatchAll[k];
+      var maxMismatch = Math.max.apply(null, mismatch);
+      var f = Math.min(state.frame, xt.length - 1);
+
+      // full straight-line path, x0 -> target, dashed -- the complete reference line,
+      // not just the path travelled so far (drawn in full every frame).
+      var pStart = worldToPx(data.x0_heroes[k], w, h, b);
+      var pTarget = worldToPx(targets[k], w, h, b);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = isPrimary ? 1.8 : 1.3;
+      ctx.globalAlpha = isPrimary ? 0.7 : 0.4;
+      ctx.lineCap = 'round';
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(pStart[0], pStart[1]);
+      ctx.lineTo(pTarget[0], pTarget[1]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+
+      // short solid direction arrow, fixed in orientation (always along x0 -> target)
+      // but anchored at the current moving point, so its position tracks playback.
+      var head = worldToPx(xt[f], w, h, b);
+      var midX = head[0], midY = head[1];
+      var ddx = pTarget[0] - pStart[0], ddy = pTarget[1] - pStart[1];
+      var dlen = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+      var dux = ddx / dlen, duy = ddy / dlen;
+      var shortLen = isPrimary ? 80 : 58;
+      var sx0 = midX - dux * shortLen / 2, sy0 = midY - duy * shortLen / 2;
+      var sx1 = midX + dux * shortLen / 2, sy1 = midY + duy * shortLen / 2;
+      var dirColor = css('--dir-arrow');
+      ctx.strokeStyle = dirColor;
+      ctx.fillStyle = dirColor;
+      ctx.lineWidth = isPrimary ? 6 : 4.5;
+      ctx.globalAlpha = isPrimary ? 1 : 0.85;
+      ctx.beginPath();
+      ctx.moveTo(sx0, sy0);
+      ctx.lineTo(sx1, sy1);
+      ctx.stroke();
+      var sAng = Math.atan2(sy1 - sy0, sx1 - sx0);
+      var sHead = isPrimary ? 20 : 15;
+      ctx.beginPath();
+      ctx.moveTo(sx1, sy1);
+      ctx.lineTo(sx1 - sHead * Math.cos(sAng - 0.5), sy1 - sHead * Math.sin(sAng - 0.5));
+      ctx.lineTo(sx1 - sHead * Math.cos(sAng + 0.5), sy1 - sHead * Math.sin(sAng + 0.5));
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // point with mismatch-modulated glow
+      var intensity = maxMismatch > 0 ? Math.min(1, mismatch[f] / maxMismatch) : 0;
+      var glowR = (isPrimary ? 7 : 5) + intensity * (isPrimary ? 13 : 9);
+      var grad = ctx.createRadialGradient(head[0], head[1], 1, head[0], head[1], glowR);
+      grad.addColorStop(0, accent);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = isPrimary ? 0.55 : 0.4;
+      ctx.beginPath();
+      ctx.arc(head[0], head[1], glowR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = isPrimary ? 1 : 0.75;
+      ctx.beginPath();
+      ctx.arc(head[0], head[1], isPrimary ? 5 : 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // predicted-velocity arrow at the current point (solid, accent) -- the angle/length
+      // gap between this and the dashed straight-line path above *is* the mismatch.
+      var vPred = vPredAll[k][f];
+      var arrowLen = isPrimary ? HERO_LEN : HERO_LEN * 0.8;
+      drawArrow(ctx, head[0], head[1], vPred[0], vPred[1], arrowLen, accent,
+        { lineWidth: isPrimary ? 3.4 : 2.4, alpha: isPrimary ? 1 : 0.8, minScale: 0.5, maxScale: 1.6 });
+    });
+  }
+
+  function meanScoreSeries(scoreAll){
+    var K = scoreAll.length, N = scoreAll[0].length, out = new Array(N);
+    for (var i = 0; i < N; i++){
+      var sum = 0;
+      for (var k = 0; k < K; k++){ sum += scoreAll[k][i]; }
+      out[i] = sum / K;
+    }
+    return out;
+  }
+
+  function minMaxSeries(scoreAll){
+    // envelope across the 4 starting points -- shown as a shaded band around the mean.
+    var K = scoreAll.length, N = scoreAll[0].length;
+    var lo = new Array(N), hi = new Array(N);
+    for (var i = 0; i < N; i++){
+      var mn = scoreAll[0][i], mx = scoreAll[0][i];
+      for (var k = 1; k < K; k++){
+        if (scoreAll[k][i] < mn) mn = scoreAll[k][i];
+        if (scoreAll[k][i] > mx) mx = scoreAll[k][i];
+      }
+      lo[i] = mn; hi[i] = mx;
+    }
+    return { lo: lo, hi: hi };
+  }
+
+  function drawComparison(){
+    var c = compareChart;
+    if (!c || !state.data) return;
+    var ctx = c.ctx, w = c.w, h = c.h, data = state.data;
+    ctx.clearRect(0, 0, w, h);
+
+    var gridColor = css('--grid');
+    var maxScore = state.globalScoreMax;
+    var pad = 8;
+    var N = data.ts.length;
+    var f = Math.min(state.frame, N - 1);
+
+    function xAt(i){ return (i / (N - 1)) * w; }
+    function yAt(v){ return h - pad - (v / maxScore) * (h - 2 * pad); }
+
+    // baseline
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h - pad);
+    ctx.lineTo(w, h - pad);
+    ctx.stroke();
+
+    function drawSeries(scoreAll, color){
+      var mean = meanScoreSeries(scoreAll);
+      var mm = minMaxSeries(scoreAll);
+
+      // shaded min-max band across the 4 starting points
+      ctx.beginPath();
+      for (var i = 0; i <= f; i++){
+        if (i === 0) ctx.moveTo(xAt(i), yAt(mm.hi[i])); else ctx.lineTo(xAt(i), yAt(mm.hi[i]));
+      }
+      for (var j = f; j >= 0; j--){ ctx.lineTo(xAt(j), yAt(mm.lo[j])); }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.16;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // bold mean line
+      ctx.beginPath();
+      for (var m = 0; m <= f; m++){
+        var mx = xAt(m), my = yAt(mean[m]);
+        if (m === 0) ctx.moveTo(mx, my); else ctx.lineTo(mx, my);
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // endpoint
+      var ex = xAt(f), ey = yAt(mean[f]);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    drawSeries(data.score_normal, css('--accent-normal'));
+    drawSeries(data.score_anom, css('--accent-anom'));
+
+    // playhead
+    var px = xAt(f);
+    ctx.strokeStyle = css('--muted');
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, h - pad);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function render(){
+    if (!state.data) return;
+    var f = Math.min(state.frame, state.data.ts.length - 1);
+    var t = state.data.ts[f];
+    els.tLabel.textContent = 't = ' + t.toFixed(2);
+    els.scrub.value = f;
+    els.scoreNormal.textContent = meanScoreSeries(state.data.score_normal)[f].toFixed(2);
+    els.scoreAnom.textContent = meanScoreSeries(state.data.score_anom)[f].toFixed(2);
+    drawScene('normal'); drawScene('anom');
+    drawComparison();
+  }
+
+  function tick(ts){
+    requestAnimationFrame(tick);
+    if (!state.playing || !state.data) return;
+    if (!state.lastTick) state.lastTick = ts;
+    var elapsed = ts - state.lastTick;
+
+    if (state.holding){
+      if (ts >= state.holdUntil){
+        state.holding = false;
+        state.frame = 0;
+        state.lastTick = ts;
+        render();
+      }
+      return;
+    }
+
+    if (elapsed >= FRAME_MS){
+      state.lastTick = ts;
+      var last = state.data.ts.length - 1;
+      if (state.frame >= last){
+        state.holding = true;
+        state.holdUntil = ts + HOLD_MS;
+      } else {
+        state.frame += 1;
+      }
+      render();
+    }
+  }
+
+  els.playBtn.addEventListener('click', function(){
+    state.playing = !state.playing;
+    state.lastTick = 0;
+    els.playBtn.textContent = state.playing ? 'Pause' : 'Play';
+  });
+
+  els.scrub.addEventListener('input', function(){
+    state.playing = false;
+    state.holding = false;
+    els.playBtn.textContent = 'Play';
+    state.frame = parseInt(els.scrub.value, 10);
+    render();
+  });
+
+  window.addEventListener('resize', resizeAll);
+
+  fetch('data.json').then(function(r){ return r.json(); }).then(function(data){
+    state.data = data;
+    els.scrub.max = data.ts.length - 1;
+    state.bounds = computeBounds(data);
+    var allAnomScores = [].concat.apply([], data.score_anom);
+    state.globalScoreMax = Math.max.apply(null, allAnomScores) * 1.08;
+    var heatSorted = data.heatmap_score.slice().sort(function(a, b){ return a - b; });
+    state.heatMaxRef = heatSorted[Math.floor(heatSorted.length * 0.9)];
+    state.heatCanvasNormal = buildHeatCanvas(data, css('--accent-normal'), state.heatMaxRef);
+    state.heatCanvasAnom = buildHeatCanvas(data, css('--accent-anom'), state.heatMaxRef);
+    resizeAll();
+    requestAnimationFrame(tick);
+    window.__ready = true;   // signal for headless frame-capture tooling
+  });
+})();
+</script>
+</body>
+</html>
