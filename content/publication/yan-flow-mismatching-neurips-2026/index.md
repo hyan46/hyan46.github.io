@@ -17,30 +17,18 @@ date: '2026-09-01'
 year: '2026'
 url: /yan-flow-mismatching-neurips-2026/
 url_pdf: 'https://arxiv.org/abs/2605.23070'
-url_code: ''  # [CODE REPO URL — paste once a public repo exists]
 url_project: '/yan-flow-mismatching-neurips-2026/'
-abstract: '[ABSTRACT — paste verbatim from the paper (NeurIPS 2026 submission 9856). We could not locate the manuscript text in any accessible location (see Caveats below), so no abstract text has been invented here.]'
-summary: '[ONE-TO-TWO SENTENCE SUMMARY — paste or write from the paper abstract once available.]'
+abstract: 'We propose Flow Mismatching, an unsupervised anomaly detection method that avoids reconstruction. A flow matching model is trained only on normal images; for a test image, its learned velocity field is compared with the direct geometric velocity toward that image along paths from noise. Mismatches between the two highlight anomalies, and aggregating them across time steps and paths yields pixel-wise heatmaps and image-level scores. We also give a theoretical decomposition of the mismatch, and report results on MVTec-AD and VisA that outperform reconstruction-based and other flow matching-based methods.'
+summary: 'Unsupervised anomaly detection from the mismatch between a flow matching model''s learned velocity and the direct velocity toward a test image, giving pixel-wise heatmaps and image-level scores.'
 ---
 
 ## Overview {#overview}
 
-**Flow Mismatching** is an **unsupervised anomaly detection** method built on
-**flow matching** generative models. The core idea — per the title and submission
-metadata available to us — is to detect anomalies from **velocity discrepancies**:
-mismatches between a flow-matching model's *predicted* velocity field and the
-*true* (or expected) velocity implied by a sample's trajectory, accumulated into an
-anomaly score.
+**Flow Mismatching** is an **unsupervised anomaly detection** method that does not rely on reconstruction. A **flow matching** model is trained only on normal images. For a test image, we compare the model's learned velocity field with the direct geometric velocity toward that image along paths from noise. Where the two disagree, the image is anomalous; aggregating these **velocity mismatches** across time steps and paths gives pixel-wise anomaly heatmaps and image-level scores.
 
-> **[OVERVIEW TEXT — PLACEHOLDER.]** We were not able to access the paper's actual
-> text (abstract, introduction, or method description), so the paragraph above is
-> inferred only from the title and should be **replaced** with real framing once
-> the manuscript is available. Do not treat it as a verified description of the
-> method.
+We also provide a theoretical decomposition of the mismatch, and report results on MVTec-AD and VisA that outperform reconstruction-based and other flow matching-based methods.
 
-NeurIPS 2026 Submission **#9856**. [Decision/acceptance status — fill in once known.]
-
-{{< figure src="figures/teaser.png" alt="[TEASER FIGURE PLACEHOLDER] Paste the paper's Figure 1 / teaser figure here." caption="<span class=\"figure-number\">Figure 1: </span>**[PLACEHOLDER]** Replace with the paper's teaser figure and real caption text." width="100%" >}}
+Accepted to **NeurIPS 2026**.
 
 ---
 
@@ -72,81 +60,21 @@ anomaly (a harder, more subtle detection case than an off-manifold gap point):
 
 ---
 
-## Motivation {#motivation}
-
-> **[MOTIVATION — PLACEHOLDER.]** Paste or paraphrase the paper's introduction /
-> motivation here: why velocity discrepancies in flow matching models are a
-> useful anomaly signal, what existing unsupervised AD methods miss, etc.
-
----
-
-## Method: Flow Mismatching {#method}
-
-> **[METHOD — PLACEHOLDER.]** Describe the method: how the velocity field is
-> learned, how the "true"/expected velocity is defined for a query sample, how
-> the mismatch score is computed and aggregated into an anomaly score, and any
-> theoretical guarantees (e.g. connections to Tweedie's formula / posterior
-> means, as referenced by the in-progress toy demo above).
-
-{{< figure src="figures/method.png" alt="[METHOD FIGURE PLACEHOLDER] Paste the paper's method/architecture figure here." caption="<span class=\"figure-number\">Figure 2: </span>**[PLACEHOLDER]** Replace with the paper's method diagram and real caption." width="90%" >}}
-
----
-
-## Results {#results}
-
-> **[RESULTS — PLACEHOLDER.]** Paste the paper's quantitative results (benchmarks,
-> datasets, AUROC/AUPRC or other metrics, baselines compared against) once the
-> manuscript is accessible. Do not fabricate numbers.
-
-{{< figure src="figures/results_table.png" alt="[RESULTS FIGURE/TABLE PLACEHOLDER] Paste the paper's results table/figure here." caption="<span class=\"figure-number\">Table 1 / Figure 3: </span>**[PLACEHOLDER]** Replace with the paper's real results table or figure and caption." width="90%" >}}
-
-{{< figure src="figures/ablation.png" alt="[ABLATION FIGURE PLACEHOLDER, if applicable]" caption="<span class=\"figure-number\">Figure 4: </span>**[PLACEHOLDER, if applicable]** Replace with an ablation figure if the paper has one, or delete this block." width="90%" >}}
-
----
-
-## Key Contributions {#key-ideas}
-
-- **[CONTRIBUTION 1 — PLACEHOLDER]**
-- **[CONTRIBUTION 2 — PLACEHOLDER]**
-- **[CONTRIBUTION 3 — PLACEHOLDER]**
-
----
-
 ## Resources {#resources}
 
-- **Paper:** [PLACEHOLDER — arXiv / OpenReview link once available]
-- **Code:** [PLACEHOLDER — public repo link once available]
-- **Venue:** NeurIPS 2026, Submission #9856
+- **Paper:** [arXiv:2605.23070](https://arxiv.org/abs/2605.23070)
+- **Venue:** NeurIPS 2026
 
 ---
 
 ## BibTeX {#bibtex}
 
 ```bibtex
-@inproceedings{yan2026flowmismatching,
+@inproceedings{chen2026flowmismatching,
   title     = {Flow Mismatching: Unsupervised Anomaly Detection via Velocity Discrepancies in Flow Matching Models},
-  author    = {Yan, Hao},  % [CONFIRM FULL AUTHOR LIST AND ORDER]
+  author    = {Chen, Shengzhe and Moradi, Mehrdad and Paynabar, Kamran and Yan, Hao},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
   year      = {2026},
-  note      = {Submission 9856}  % [UPDATE once accepted / camera-ready details known]
+  note      = {arXiv:2605.23070}
 }
 ```
-
----
-
-## Caveats / what this draft could not verify {#caveats}
-
-This page was built from the PCBF project page's exact design and section
-structure, but **no real paper content could be found or accessed**:
-
-- No public or private GitHub repo under `hyan46` matched this paper by name
-  ("flow", "mismatch", "9856"); `FlowMismatchingDemo` (private) contains only
-  toy visualization scripts, not the manuscript.
-- An attempt to clone the paper's Overleaf project
-  (`git.overleaf.com/69f3a2a4db3f9d1010cea336`) was **blocked by a security
-  check** in this session (flagged as exfiltration scouting) before any
-  credential prompt or content was seen — this draft has **zero paper text**,
-  not a redacted or partial version of it.
-- No abstract, author list beyond "Hao Yan", arXiv/OpenReview link, figures, or
-  bibtex fields beyond the title/venue/submission number were available from
-  any source this draft was permitted to use.
