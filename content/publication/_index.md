@@ -18,4 +18,4 @@ header:
   image: ""
 ---
 
-Below is the full list of publications with Hao Yan as author or co-author, grouped by year (synced from [HaoYan.bib](<~/ASU Dropbox/Hao Yan/CVs/HaoYan.bib>)). For grants, awards, and service, see the curriculum vitae PDF alongside [my faculty page](http://www.public.asu.edu/~hyan46/).
+Below is the full list of publications with Hao Yan as author or co-author, grouped by year (synced from [HaoYan.bib](<~/ASU Dropbox/Hao Yan/CVs/HaoYan.bib>)). For grants, awards, and service, see the curriculum vitae PDF alongside [my faculty page](https://faculty.engineering.asu.edu/hao-yan/).

@@ -14,15 +14,15 @@ authors:
 superuser: true
 
 # Role/position/tagline
-role: Assistant Professor in School of Computing, Informatics, and Decision Systems Engineering
+role: Associate Professor in School of Computing and Augmented Intelligence
 
 # Organizations/Affiliations to show in About widget
 organizations:
 - name: Arizona State University
-  url: "https://www.public.asu.edu/~hyan46/"
+  url: "https://faculty.engineering.asu.edu/hao-yan/"
 
 # Short bio (displayed in user profile at end of posts)
-bio: My research interests include Data Science for Complex Systems. 
+bio: My research develops machine learning methods for high-dimensional, spatio-temporal, and sequential data, including reinforcement learning, generative models, anomaly detection, and causal and tensor-based learning.
 
 # Interests to show in About widget
 interests:
@@ -34,16 +34,19 @@ interests:
 education:
   courses:
   - course: Ph.D. in Industrial Engineering
-    institution: Georgia Institution of Technology 
+    institution: Georgia Institute of Technology
     year: 2017
-  - course: M.S. in Statistics
-    institution: Georgia Institution of Technology 
-    year: 2016
   - course: M.S. in Computational Science and Engineering
-    institution: Georgia Institution of Technology 
+    institution: Georgia Institute of Technology
     year: 2016
+  - course: M.S. in Statistics
+    institution: Georgia Institute of Technology
+    year: 2015
+  - course: B.S. in Economics
+    institution: Peking University
+    year: 2011
   - course: B.S. in Physics
-    institution: Beijing University
+    institution: Peking University
     year: 2011
 
 # Social/Academic Networking
@@ -80,6 +83,6 @@ user_groups:
 
 ---
 # Research Interest
-Develop machine learninng models and efficient real-time large-scale optimization algorithms for high-dimensional data (i.e., Images, profiles, signals) in different industrial systems and spatio-temporal systems for anomaly detection and system modeling
+Develop reinforcement learning, generative modeling, and probabilistic machine learning methods for high-dimensional, spatio-temporal, and sequential data (images, profiles, signals, event sequences) in industrial, energy, transportation, and healthcare systems, with a focus on anomaly detection, prognostics, and decision making. Recent directions include distributional and flow-based reinforcement learning, flow-matching and diffusion models for anomaly detection and surrogate modeling, causal structure (DAG) learning, Bayesian and physics-informed learning, and tensor methods.
 
 {{< icon name="download" pack="fas" >}} Download my {{< staticref "uploads/resume.pdf" "newtab" >}}resumé{{< /staticref >}}.

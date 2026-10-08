@@ -18,4 +18,4 @@ url_video: ""
 
 ## Overall Information {#overall-information}
 
-PI on collaborative NSF award (09/2023--08/2026): multi-agent adaptive data collection for automated post-disaster rapid damage assessment. Total \\$550K (my effort 30%). Team: Mostafa Reisi, Mohammad Illbeigi.
+PI on collaborative NSF award (09/2023--08/2027): multi-agent adaptive data collection for automated post-disaster rapid damage assessment. Total \\$550K (my effort 30%). Team: Mostafa Reisi, Mohammad Illbeigi.

@@ -18,4 +18,4 @@ url_video: ""
 
 ## Overall Information {#overall-information}
 
-PI (10/2023--09/2026): Bayesian optimization for automatic reactor design optimization. Total \\$1M (my effort 40%). Team: Andi Wang.
+PI (10/2023--09/2027): Bayesian optimization for automatic reactor design optimization. Total \\$1M (my effort 40%). Team: Andi Wang.

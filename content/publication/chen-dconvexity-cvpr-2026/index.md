@@ -34,7 +34,7 @@ characterizations that turn a hard global geometric constraint into local, diffe
 inequalities, yielding a compact convolutional loss and a drop-in **Convex Gradient
 Projection Module (CGPM)**.
 
-Accepted at **[CVPR 2026](https://cvpr.thecvf.com/virtual/2026/poster/39174)** as a **Highlight paper** (top 3%).
+Accepted at **[CVPR 2026](https://cvpr.thecvf.com/virtual/2026/poster/39174)** as a **Highlight paper** (top 2%).
 
 {{< figure src="figures/architecture.png" alt="D-Convexity architecture: Swin Transformer backbone produces a feature map o, which is passed through a sigmoid to give a raw mask u. The Convex Gradient Projection Module (CGPM) then iteratively projects u onto the quasi-concave manifold using the convex loss gradient, yielding a strictly convex final mask. Training uses cross-entropy on the raw mask and the quasi-concavity loss on the projected mask." width="100%" >}}
 
@@ -440,7 +440,7 @@ losses in `loss.py`.
 - **Paper (arXiv):** [arXiv:2605.19210](https://arxiv.org/abs/2605.19210v1)
 - **Code:** [github.com/ShengzheC/D-Convexity](https://github.com/ShengzheC/D-Convexity)
 - **CVPR 2026 virtual poster:** [cvpr.thecvf.com/virtual/2026/poster/39174](https://cvpr.thecvf.com/virtual/2026/poster/39174)
-- **Venue:** CVPR 2026 (Highlight, top 3%)
+- **Venue:** CVPR 2026 (Highlight, top 2%)
 
 ---
 
