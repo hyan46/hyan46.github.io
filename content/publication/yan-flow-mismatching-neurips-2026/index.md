@@ -6,19 +6,17 @@ draft: false
 featured: true
 layout: 'project-page'
 authors:
+- Shengzhe Chen
+- Mehrdad Moradi
+- Kamran Paynabar
 - Hao Yan
-# [AUTHORS — confirm full author list / order from the paper; only "Hao Yan" was
-#  given to us directly, so no co-authors have been added. Add them above in
-#  submission order, e.g.:
-# - First Last
-# - Hao Yan
 publication_types:
 - paper-conference
 publication: '*Advances in Neural Information Processing Systems (NeurIPS)*'
-date: '2026-01-01'
+date: '2026-09-01'
 year: '2026'
 url: /yan-flow-mismatching-neurips-2026/
-url_pdf: ''   # [ARXIV / OPENREVIEW LINK — paste link once available]
+url_pdf: 'https://arxiv.org/abs/2605.23070'
 url_code: ''  # [CODE REPO URL — paste once a public repo exists]
 url_project: '/yan-flow-mismatching-neurips-2026/'
 abstract: '[ABSTRACT — paste verbatim from the paper (NeurIPS 2026 submission 9856). We could not locate the manuscript text in any accessible location (see Caveats below), so no abstract text has been invented here.]'
@@ -48,7 +46,7 @@ NeurIPS 2026 Submission **#9856**. [Decision/acceptance status — fill in once 
 
 ## Toy-Example Demonstrations {#toy-examples}
 
-A short video and a live interactive version illustrate the velocity-mismatch
+A live interactive demo illustrates the velocity-mismatch
 mechanism on 2D toy data — a flow-matching model trained only on normal data,
 run toward a real data point and an off-manifold point from the same starting
 noise draws. Solid arrows show the model's predicted velocity; dashed lines
@@ -56,7 +54,6 @@ show the true heading. On the normal target they track each other; on the
 off-manifold target they visibly diverge, and that growing disagreement is
 the anomaly signal.
 
-{{< video src="figures/flow_mismatching_demo.mp4" caption="<span class=\"figure-number\">Video 1: </span>Predicted-vs-true velocity mismatch over time for a normal-target vs. off-manifold-target flow (two panels), with a cumulative mismatch-score comparison and an end-of-loop anomaly-score landscape reveal." width="100%" max_width="980px" >}}
 
 **Try it yourself** — play/pause, scrub through time, and switch between a 3-cluster
 mixture (the video above) and a half-moon manifold with a genuinely near-manifold
