@@ -289,8 +289,8 @@ footer strong{ color: var(--fg); font-weight: 600; }
   <div class="header-row">
     <div class="eyebrow">Unsupervised anomaly detection &middot; Flow Mismatching</div>
     <div class="dataset-select" role="group" aria-label="Toy dataset">
-      <button class="dataset-btn active" data-src="data.json">3-cluster GMM</button>
-      <button class="dataset-btn" data-src="data_halfmoon.json">Semicircle (paper)</button>
+      <button class="dataset-btn" data-src="data.json">3-cluster GMM</button>
+      <button class="dataset-btn active" data-src="data_halfmoon.json">Semicircle (paper)</button>
     </div>
   </div>
 
@@ -848,7 +848,7 @@ footer strong{ color: var(--fg); font-weight: 600; }
     });
   }
 
-  loadDataset('data.json');
+  loadDataset('data_halfmoon.json');
   requestAnimationFrame(tick);
 })();
 </script>

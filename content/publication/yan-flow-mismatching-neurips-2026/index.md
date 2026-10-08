@@ -43,11 +43,11 @@ off-manifold target they visibly diverge, and that growing disagreement is
 the anomaly signal.
 
 
-**Try it yourself** — drag the time slider (or press play), and switch between a
-3-cluster mixture and the paper's actual toy setup (Appendix B.1): an upper
-semicircle manifold, scored on the paper's own grid and aggregation rule, with
-a genuinely near-manifold anomaly (a harder, more subtle detection case than an
-off-manifold gap point):
+**Try it yourself** — drag the time slider (or press play). It defaults to the
+paper's actual toy setup (Appendix B.1): an upper semicircle manifold, scored on
+the paper's own grid and aggregation rule, with a genuinely near-manifold
+anomaly (a harder, more subtle detection case than an off-manifold gap point);
+switch to a 3-cluster mixture with the toggle above the demo:
 
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
@@ -83,6 +83,26 @@ the weighted-combined view:
     src="/demo/bias-variance/index.html"
     title="Bias-variance trade-off across ODE time, interactive demo"
     style="width:100%;aspect-ratio:900/1038;border:none;display:block;"
+    loading="lazy">
+  </iframe>
+</div>
+{{< /rawhtml >}}
+
+### Flow mismatching on a real image {#mvtec-example}
+
+The toy examples above use synthetic 2D data so the mechanism is easy to see;
+the same method applies directly to real images. Below is the velocity-mismatch
+heatmap computed on a real MVTec-AD test image (cable category, swapped-wire
+defect) using the trained flow-mismatching model — no synthetic data, same
+per-$t$ computation and $w(t)=t^2$ time-weighting as the toy demos. The green
+outline marks the ground-truth defect region.
+
+{{< rawhtml >}}
+<div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
+  <iframe
+    src="/demo/mvtec/index.html"
+    title="Flow Mismatching on a real MVTec-AD image, interactive demo"
+    style="width:100%;aspect-ratio:950/774;border:none;display:block;"
     loading="lazy">
   </iframe>
 </div>

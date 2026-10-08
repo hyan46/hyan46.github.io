@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Mismatching on Real MVTec Data</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #faf8f4;
+  --fg: #1b1f27;
+  --muted: #666f80;
+  --border: rgba(20,20,30,0.10);
+  --font-display: 'Big Shoulders Display', sans-serif;
+  --font-body: 'Source Sans 3', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+*{ box-sizing: border-box; }
+body{ background: var(--bg); color: var(--fg); font-family: var(--font-body); padding-inline: 16px; margin: 0; }
+.page{ max-width: 980px; margin: 0 auto; padding-block: 24px 32px; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow{ font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+.panel{ background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.panel-head{ display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel-head h2{ font-family: var(--font-display); font-weight: 800; font-size: 22px; margin: 0; }
+.panel-head .state-label{ font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.stage{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px){ .stage{ grid-template-columns: 1fr; } }
+.scene-wrap{ position: relative; width: 100%; aspect-ratio: 1/1; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+canvas.scene{ width: 100%; height: 100%; display: block; }
+.scene-label{ font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); text-align: center; }
+.transport{ display: flex; align-items: center; gap: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+button.transport-btn{ font-family: var(--font-mono); font-size: 13px; color: var(--fg); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; cursor: pointer; flex: none; }
+button.transport-btn:hover{ border-color: var(--muted); }
+input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
+.t-label{ font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); min-width: 108px; text-align: right; flex: none; }
+.caption{ font-size: 13px; line-height: 1.55; color: var(--muted); margin: 0; }
+.caption strong{ color: var(--fg); font-weight: 600; }
+.legend-row{ display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.swatch-bar{ height: 10px; flex: 1; border-radius: 5px; background: linear-gradient(to right, #000000, #a80000, #ff4d00, #ffb300, #ffff66, #ffffff); }
+</style>
+
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">Flow Mismatching &middot; real MVTec-AD data (cable, cable_swap defect)</div>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Flow mismatching on a real image</h2>
+      <span class="state-label" id="stateLabel">t = 0.03</span>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="scene-wrap"><canvas class="scene" id="sceneImg"></canvas></div>
+        <div class="scene-label">input test image (cable, swapped-wire defect)</div>
+      </div>
+      <div>
+        <div class="scene-wrap"><canvas class="scene" id="sceneHeat"></canvas></div>
+        <div class="scene-label" id="heatLabel">velocity-mismatch heatmap, t = 0.03</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <span>0.0 (low mismatch)</span>
+      <div class="swatch-bar"></div>
+      <span>1.0 (high mismatch)</span>
+    </div>
+    <div class="transport">
+      <button class="transport-btn" id="playBtn">Play</button>
+      <input type="range" id="scrub" min="0" max="29" value="0" step="1" aria-label="Timeline">
+      <div class="t-label" id="tLabel">t = 0.03</div>
+    </div>
+    <p class="caption">
+      <strong>Drag the slider</strong> to see the velocity-mismatch heatmap evolve across ODE time
+      <em>t</em>, computed directly on a real MVTec-AD test image (no synthetic toy data) using the
+      trained flow-mismatching model. The green outline marks the ground-truth defect region. As with
+      the toy example, early and late <em>t</em> are noisier; the time-weighted combination (past the
+      end of the slider) is the final detector output, and localizes tightly to the actual defect.
+    </p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var FRAME_MS = 260;
+  var HOLD_MS = 1800;
+
+  var state = { data: null, frame: 0, playing: false, lastTick: 0, holding: false, holdUntil: 0, heatCanvases: [], imgCanvas: null };
+  var els = {
+    scrub: document.getElementById('scrub'),
+    playBtn: document.getElementById('playBtn'),
+    tLabel: document.getElementById('tLabel'),
+    stateLabel: document.getElementById('stateLabel'),
+    heatLabel: document.getElementById('heatLabel')
+  };
+  var sceneImg = null, sceneHeat = null;
+
+  function setupCanvas(canvas){
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    var rect = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height));
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function resizeAll(){
+    var ci = document.getElementById('sceneImg'), ch = document.getElementById('sceneHeat');
+    var si = setupCanvas(ci), sh = setupCanvas(ch);
+    sceneImg = { canvas: ci, ctx: si.ctx, w: si.w, h: si.h };
+    sceneHeat = { canvas: ch, ctx: sh.ctx, w: sh.w, h: sh.h };
+    render();
+  }
+
+  function hotColor(v){
+    v = Math.max(0, Math.min(1, v));
+    var r, g, b;
+    if (v < 0.365){ r = v / 0.365; g = 0; b = 0; }
+    else if (v < 0.746){ r = 1; g = (v - 0.365) / (0.746 - 0.365); b = 0; }
+    else { r = 1; g = 1; b = (v - 0.746) / (1 - 0.746); }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+
+  function buildHeatCanvas(scoreArr, nx, lo, hi){
+    var ny = scoreArr.length / nx;
+    var off = document.createElement('canvas');
+    off.width = nx; off.height = ny;
+    var octx = off.getContext('2d');
+    var img = octx.createImageData(nx, ny);
+    var span = Math.max(hi - lo, 1e-9);
+    for (var i = 0; i < nx * ny; i++){
+      var v = Math.max(0, Math.min(1, (scoreArr[i] - lo) / span));
+      var rgb = hotColor(v);
+      var p = i * 4;
+      img.data[p] = rgb.r; img.data[p + 1] = rgb.g; img.data[p + 2] = rgb.b; img.data[p + 3] = 255;
+    }
+    octx.putImageData(img, 0, 0);
+    return off;
+  }
+
+  function buildImageCanvas(rgbArr, nx){
+    var ny = rgbArr.length;
+    var off = document.createElement('canvas');
+    off.width = nx; off.height = ny;
+    var octx = off.getContext('2d');
+    var img = octx.createImageData(nx, ny);
+    for (var row = 0; row < ny; row++){
+      for (var col = 0; col < nx; col++){
+        var px = rgbArr[row][col];
+        var p = (row * nx + col) * 4;
+        img.data[p] = px[0]; img.data[p + 1] = px[1]; img.data[p + 2] = px[2]; img.data[p + 3] = 255;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    return off;
+  }
+
+  function drawMaskOutline(ctx, w, h, mask){
+    var ny = mask.length, nx = mask[0].length;
+    ctx.save();
+    ctx.strokeStyle = '#27ae60';
+    ctx.lineWidth = 2;
+    var cellW = w / nx, cellH = h / ny;
+    for (var row = 0; row < ny; row++){
+      for (var col = 0; col < nx; col++){
+        var v = mask[row][col] > 0.5;
+        var right = col + 1 < nx && (mask[row][col + 1] > 0.5) !== v;
+        var down = row + 1 < ny && (mask[row + 1][col] > 0.5) !== v;
+        if (right){
+          ctx.beginPath();
+          ctx.moveTo((col + 1) * cellW, row * cellH);
+          ctx.lineTo((col + 1) * cellW, (row + 1) * cellH);
+          ctx.stroke();
+        }
+        if (down){
+          ctx.beginPath();
+          ctx.moveTo(col * cellW, (row + 1) * cellH);
+          ctx.lineTo((col + 1) * cellW, (row + 1) * cellH);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  function render(){
+    if (!state.data) return;
+    var data = state.data;
+    var nFrames = data.ts_frames.length;
+    var atEnd = state.frame >= nFrames;
+
+    if (sceneImg && state.imgCanvas){
+      sceneImg.ctx.clearRect(0, 0, sceneImg.w, sceneImg.h);
+      sceneImg.ctx.imageSmoothingEnabled = true;
+      sceneImg.ctx.drawImage(state.imgCanvas, 0, 0, sceneImg.w, sceneImg.h);
+    }
+
+    if (sceneHeat){
+      var heatCanvas = state.heatCanvases[Math.min(state.frame, nFrames)];
+      sceneHeat.ctx.clearRect(0, 0, sceneHeat.w, sceneHeat.h);
+      if (heatCanvas){
+        sceneHeat.ctx.imageSmoothingEnabled = true;
+        sceneHeat.ctx.imageSmoothingQuality = 'high';
+        sceneHeat.ctx.drawImage(heatCanvas, 0, 0, heatCanvas.width, heatCanvas.height, 0, 0, sceneHeat.w, sceneHeat.h);
+      }
+      drawMaskOutline(sceneHeat.ctx, sceneHeat.w, sceneHeat.h, data.mask);
+    }
+
+    var label = atEnd ? 'Weighted Combined (w(t)=t²)' : ('t = ' + data.ts_frames[state.frame].toFixed(2));
+    els.tLabel.textContent = label;
+    els.stateLabel.textContent = atEnd ? 'combined' : label;
+    els.heatLabel.textContent = 'velocity-mismatch heatmap, ' + (atEnd ? 'combined' : label);
+    els.scrub.value = Math.min(state.frame, nFrames);
+  }
+
+  function tick(ts){
+    requestAnimationFrame(tick);
+    if (!state.playing || !state.data) return;
+    if (!state.lastTick) state.lastTick = ts;
+    var elapsed = ts - state.lastTick;
+    var lastFrame = state.data.ts_frames.length;
+    if (state.holding){
+      if (ts >= state.holdUntil){ state.holding = false; state.frame = 0; state.lastTick = ts; render(); }
+      return;
+    }
+    if (elapsed >= FRAME_MS){
+      state.lastTick = ts;
+      if (state.frame >= lastFrame){ state.holding = true; state.holdUntil = ts + HOLD_MS; }
+      else { state.frame += 1; }
+      render();
+    }
+  }
+
+  els.playBtn.addEventListener('click', function(){
+    state.playing = !state.playing; state.lastTick = 0;
+    els.playBtn.textContent = state.playing ? 'Pause' : 'Play';
+  });
+  els.scrub.addEventListener('input', function(){
+    state.playing = false; state.holding = false; els.playBtn.textContent = 'Play';
+    state.frame = parseInt(els.scrub.value, 10); render();
+  });
+  window.addEventListener('resize', resizeAll);
+
+  function loadData(url){
+    window.__ready = false;
+    return fetch(url).then(function(r){ return r.json(); }).then(function(data){
+      state.data = data;
+      var nx = data.out_nx;
+      state.heatCanvases = data.frames.map(function(f){
+        var lo = Math.min.apply(null, f), hi = Math.max.apply(null, f);
+        var flat = [].concat.apply([], f);
+        var sorted = flat.slice().sort(function(a,b){return a-b;});
+        lo = sorted[Math.floor(sorted.length*0.01)]; hi = sorted[Math.floor(sorted.length*0.99)];
+        return buildHeatCanvas(flat, nx, lo, hi);
+      });
+      var combinedFlat = [].concat.apply([], data.combined);
+      var cSorted = combinedFlat.slice().sort(function(a,b){return a-b;});
+      var cLo = cSorted[Math.floor(cSorted.length*0.01)], cHi = cSorted[Math.floor(cSorted.length*0.99)];
+      state.heatCanvases.push(buildHeatCanvas(combinedFlat, nx, cLo, cHi));
+      state.imgCanvas = buildImageCanvas(data.image_rgb, nx);
+      els.scrub.max = data.ts_frames.length;
+      state.frame = 0; state.holding = false; state.playing = false;
+      els.playBtn.textContent = 'Play';
+      resizeAll();
+      window.__ready = true;
+    });
+  }
+
+  loadData('mvtec_per_t_cable_swap_020.json');
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>
