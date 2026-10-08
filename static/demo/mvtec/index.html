@@ -125,34 +125,46 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
   }
 
-  function buildHeatCanvas(scoreArr, nx, lo, hi){
-    var ny = scoreArr.length / nx;
+  // scoreGrid: nested 2D array (ny rows x nx cols) -- resolution is inferred from its own
+  // shape, so frames at one resolution and the final heatmap at another both just work.
+  function buildHeatCanvas(scoreGrid, lo, hi){
+    var ny = scoreGrid.length, nx = scoreGrid[0].length;
     var off = document.createElement('canvas');
     off.width = nx; off.height = ny;
     var octx = off.getContext('2d');
     var img = octx.createImageData(nx, ny);
     var span = Math.max(hi - lo, 1e-9);
-    for (var i = 0; i < nx * ny; i++){
-      var v = Math.max(0, Math.min(1, (scoreArr[i] - lo) / span));
-      var rgb = hotColor(v);
-      var p = i * 4;
-      img.data[p] = rgb.r; img.data[p + 1] = rgb.g; img.data[p + 2] = rgb.b; img.data[p + 3] = 255;
+    for (var row = 0; row < ny; row++){
+      for (var col = 0; col < nx; col++){
+        var v = Math.max(0, Math.min(1, (scoreGrid[row][col] - lo) / span));
+        var rgb = hotColor(v);
+        var p = (row * nx + col) * 4;
+        img.data[p] = rgb.r; img.data[p + 1] = rgb.g; img.data[p + 2] = rgb.b; img.data[p + 3] = 255;
+      }
     }
     octx.putImageData(img, 0, 0);
     return off;
   }
 
-  function buildImageCanvas(rgbArr, nx){
-    var ny = rgbArr.length;
+  // rgbArr: nested (ny x nx x 3) array, channel values in [0,1] or [0,255] (auto-detected).
+  function buildImageCanvas(rgbArr){
+    var ny = rgbArr.length, nx = rgbArr[0].length;
     var off = document.createElement('canvas');
     off.width = nx; off.height = ny;
     var octx = off.getContext('2d');
     var img = octx.createImageData(nx, ny);
+    var isNormalized = true;
+    outer: for (var r = 0; r < ny; r++){
+      for (var c = 0; c < nx; c++){
+        if (rgbArr[r][c][0] > 1.0 || rgbArr[r][c][1] > 1.0 || rgbArr[r][c][2] > 1.0){ isNormalized = false; break outer; }
+      }
+    }
+    var scale = isNormalized ? 255 : 1;
     for (var row = 0; row < ny; row++){
       for (var col = 0; col < nx; col++){
         var px = rgbArr[row][col];
         var p = (row * nx + col) * 4;
-        img.data[p] = px[0]; img.data[p + 1] = px[1]; img.data[p + 2] = px[2]; img.data[p + 3] = 255;
+        img.data[p] = Math.round(px[0] * scale); img.data[p + 1] = Math.round(px[1] * scale); img.data[p + 2] = Math.round(px[2] * scale); img.data[p + 3] = 255;
       }
     }
     octx.putImageData(img, 0, 0);
@@ -190,7 +202,7 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
   function render(){
     if (!state.data) return;
     var data = state.data;
-    var nFrames = data.ts_frames.length;
+    var nFrames = data.t.length;
     var atEnd = state.frame >= nFrames;
 
     if (sceneImg && state.imgCanvas){
@@ -210,7 +222,7 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
       drawMaskOutline(sceneHeat.ctx, sceneHeat.w, sceneHeat.h, data.mask);
     }
 
-    var label = atEnd ? 'Weighted Combined (w(t)=t²)' : ('t = ' + data.ts_frames[state.frame].toFixed(2));
+    var label = atEnd ? 'Weighted Combined (w(t)=t²)' : ('t = ' + data.t[state.frame].toFixed(2));
     els.tLabel.textContent = label;
     els.stateLabel.textContent = atEnd ? 'combined' : label;
     els.heatLabel.textContent = 'velocity-mismatch heatmap, ' + (atEnd ? 'combined' : label);
@@ -222,7 +234,7 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     if (!state.playing || !state.data) return;
     if (!state.lastTick) state.lastTick = ts;
     var elapsed = ts - state.lastTick;
-    var lastFrame = state.data.ts_frames.length;
+    var lastFrame = state.data.t.length;
     if (state.holding){
       if (ts >= state.holdUntil){ state.holding = false; state.frame = 0; state.lastTick = ts; render(); }
       return;
@@ -245,24 +257,24 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
   });
   window.addEventListener('resize', resizeAll);
 
+  function percentileRange(nestedGrid){
+    var flat = [].concat.apply([], nestedGrid);
+    var sorted = flat.slice().sort(function(a,b){return a-b;});
+    return [sorted[Math.floor(sorted.length*0.01)], sorted[Math.floor(sorted.length*0.99)]];
+  }
+
   function loadData(url){
     window.__ready = false;
     return fetch(url).then(function(r){ return r.json(); }).then(function(data){
       state.data = data;
-      var nx = data.out_nx;
       state.heatCanvases = data.frames.map(function(f){
-        var lo = Math.min.apply(null, f), hi = Math.max.apply(null, f);
-        var flat = [].concat.apply([], f);
-        var sorted = flat.slice().sort(function(a,b){return a-b;});
-        lo = sorted[Math.floor(sorted.length*0.01)]; hi = sorted[Math.floor(sorted.length*0.99)];
-        return buildHeatCanvas(flat, nx, lo, hi);
+        var range = percentileRange(f);
+        return buildHeatCanvas(f, range[0], range[1]);
       });
-      var combinedFlat = [].concat.apply([], data.combined);
-      var cSorted = combinedFlat.slice().sort(function(a,b){return a-b;});
-      var cLo = cSorted[Math.floor(cSorted.length*0.01)], cHi = cSorted[Math.floor(cSorted.length*0.99)];
-      state.heatCanvases.push(buildHeatCanvas(combinedFlat, nx, cLo, cHi));
-      state.imgCanvas = buildImageCanvas(data.image_rgb, nx);
-      els.scrub.max = data.ts_frames.length;
+      var finalRange = percentileRange(data.heatmap_final);
+      state.heatCanvases.push(buildHeatCanvas(data.heatmap_final, finalRange[0], finalRange[1]));
+      state.imgCanvas = buildImageCanvas(data.image);
+      els.scrub.max = data.t.length;
       state.frame = 0; state.holding = false; state.playing = false;
       els.playBtn.textContent = 'Play';
       resizeAll();
