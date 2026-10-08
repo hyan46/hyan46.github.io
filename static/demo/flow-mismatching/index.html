@@ -290,7 +290,7 @@ footer strong{ color: var(--fg); font-weight: 600; }
     <div class="eyebrow">Unsupervised anomaly detection &middot; Flow Mismatching</div>
     <div class="dataset-select" role="group" aria-label="Toy dataset">
       <button class="dataset-btn active" data-src="data.json">3-cluster GMM</button>
-      <button class="dataset-btn" data-src="data_halfmoon.json">Half-moon</button>
+      <button class="dataset-btn" data-src="data_halfmoon.json">Semicircle (paper)</button>
     </div>
   </div>
 
@@ -345,7 +345,7 @@ footer strong{ color: var(--fg); font-weight: 600; }
   var state = {
     data: null,
     frame: 0,
-    playing: true,
+    playing: false,
     lastTick: 0,
     holding: false,
     holdUntil: 0,
@@ -391,6 +391,10 @@ footer strong{ color: var(--fg); font-weight: 600; }
   }
 
   function computeBounds(data){
+    if (data.bounds_override){
+      var o = data.bounds_override;   // [x1min, x1max, x2min, x2max], e.g. the paper's exact scoring grid
+      return { minX: o[0], maxX: o[1], minY: o[2], maxY: o[3] };
+    }
     var xs = [], ys = [];
     function add(pt){ xs.push(pt[0]); ys.push(pt[1]); }
     data.cloud.forEach(add);
@@ -776,8 +780,8 @@ footer strong{ color: var(--fg); font-weight: 600; }
       state.data = data;
       state.frame = 0;
       state.holding = false;
-      state.playing = true;
-      els.playBtn.textContent = 'Pause';
+      state.playing = false;   // default to paused: slider is the primary way to explore
+      els.playBtn.textContent = 'Play';
       els.scrub.max = data.ts.length - 1;
       state.bounds = computeBounds(data);
       var allAnomScores = [].concat.apply([], data.score_anom);
@@ -806,5 +810,6 @@ footer strong{ color: var(--fg); font-weight: 600; }
   requestAnimationFrame(tick);
 })();
 </script>
+
 </body>
 </html>

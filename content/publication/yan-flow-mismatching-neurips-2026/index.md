@@ -43,9 +43,11 @@ off-manifold target they visibly diverge, and that growing disagreement is
 the anomaly signal.
 
 
-**Try it yourself** — play/pause, scrub through time, and switch between a 3-cluster
-mixture and a half-moon manifold with a genuinely near-manifold
-anomaly (a harder, more subtle detection case than an off-manifold gap point):
+**Try it yourself** — drag the time slider (or press play), and switch between a
+3-cluster mixture and the paper's actual toy setup (Appendix B.1): an upper
+semicircle manifold, scored on the paper's own grid and aggregation rule, with
+a genuinely near-manifold anomaly (a harder, more subtle detection case than an
+off-manifold gap point):
 
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
