@@ -56,7 +56,7 @@ the anomaly signal.
 
 
 **Try it yourself** — play/pause, scrub through time, and switch between a 3-cluster
-mixture (the video above) and a half-moon manifold with a genuinely near-manifold
+mixture and a half-moon manifold with a genuinely near-manifold
 anomaly (a harder, more subtle detection case than an off-manifold gap point):
 
 {{< rawhtml >}}
