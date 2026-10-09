@@ -19,7 +19,6 @@
   --accent-normal: #1e9484;
   --accent-anom: #d8573a;
   --grid: rgba(255,255,255,0.15);
-  --cloud-dot: rgba(236,239,244,0.62);
   --dir-arrow: #ffd166;
   --font-display: 'Big Shoulders Display', sans-serif;
   --font-body: 'Source Sans 3', sans-serif;
@@ -37,7 +36,6 @@
     --accent-normal: #0f8a76;
     --accent-anom: #c24e2e;
     --grid: rgba(20,20,30,0.14);
-    --cloud-dot: rgba(27,31,39,0.55);
     --dir-arrow: #a66a00;
   }
 }
@@ -52,7 +50,6 @@
   --accent-normal: #0f8a76;
   --accent-anom: #c24e2e;
   --grid: rgba(20,20,30,0.14);
-  --cloud-dot: rgba(27,31,39,0.55);
   --dir-arrow: #a66a00;
 }
 
@@ -62,6 +59,7 @@ body{
   color: var(--fg);
   font-family: var(--font-body);
   padding-inline: 16px;
+  margin: 0;
 }
 .page{
   max-width: 1500px;
@@ -84,29 +82,6 @@ body{
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-}
-.dataset-select{
-  display: flex;
-  gap: 6px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px;
-}
-.dataset-btn{
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--muted);
-  background: transparent;
-  border: none;
-  border-radius: 999px;
-  padding: 6px 13px;
-  cursor: pointer;
-}
-.dataset-btn.active{
-  background: var(--surface);
-  color: var(--fg);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 h1{
   font-family: var(--font-display);
@@ -288,10 +263,6 @@ footer strong{ color: var(--fg); font-weight: 600; }
 <div class="page">
   <div class="header-row">
     <div class="eyebrow">Unsupervised anomaly detection &middot; Flow Mismatching</div>
-    <div class="dataset-select" role="group" aria-label="Toy dataset">
-      <button class="dataset-btn" data-src="data.json">3-cluster GMM</button>
-      <button class="dataset-btn active" data-src="data_halfmoon.json">Semicircle (paper)</button>
-    </div>
   </div>
 
   <div class="stage">
@@ -359,8 +330,7 @@ footer strong{ color: var(--fg); font-weight: 600; }
     scoreAnom: document.getElementById('score-anom'),
     scrub: document.getElementById('scrub'),
     playBtn: document.getElementById('playBtn'),
-    tLabel: document.getElementById('tLabel'),
-    datasetBtns: Array.prototype.slice.call(document.querySelectorAll('.dataset-btn'))
+    tLabel: document.getElementById('tLabel')
   };
 
   var scenes = {};   // kind -> {canvas, ctx, w, h}
@@ -391,20 +361,8 @@ footer strong{ color: var(--fg); font-weight: 600; }
   }
 
   function computeBounds(data){
-    if (data.bounds_override){
-      var o = data.bounds_override;   // [x1min, x1max, x2min, x2max], e.g. the paper's exact scoring grid
-      return { minX: o[0], maxX: o[1], minY: o[2], maxY: o[3] };
-    }
-    var xs = [], ys = [];
-    function add(pt){ xs.push(pt[0]); ys.push(pt[1]); }
-    data.cloud.forEach(add);
-    data.xt_normal.forEach(function(path){ path.forEach(add); });
-    data.xt_anom.forEach(function(path){ path.forEach(add); });
-    data.bg_paths.forEach(function(path){ path.forEach(add); });
-    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
-    var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
-    var padX = (maxX - minX) * 0.08, padY = (maxY - minY) * 0.08;
-    return { minX: minX - padX, maxX: maxX + padX, minY: minY - padY, maxY: maxY + padY };
+    var o = data.bounds_override;
+    return { minX: o[0], maxX: o[1], minY: o[2], maxY: o[3] };
   }
 
   function worldToPx(pt, w, h, b){
@@ -503,6 +461,22 @@ footer strong{ color: var(--fg); font-weight: 600; }
     ctx.restore();
   }
 
+  function drawManifoldArc(ctx, w, h, b, data){
+    if (!data.manifold_curve || !data.manifold_curve.length) return;
+    ctx.save();
+    ctx.strokeStyle = '#2f6fed';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    data.manifold_curve.forEach(function(pt, i){
+      var p = worldToPx(pt, w, h, b);
+      if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawScene(kind){
     var s = scenes[kind];
     if (!s || !state.data) return;
@@ -515,18 +489,9 @@ footer strong{ color: var(--fg); font-weight: 600; }
     var lastFrame = data.ts.length - 1;
     var atEnd = state.frame >= lastFrame;
 
-    // learned-manifold point cloud -- shown only during the live path animation;
-    // at the final/heatmap-reveal frame the manifold is instead traced as a blue
-    // arc (paper style), so the two don't visually compete.
-    if (!atEnd){
-      ctx.fillStyle = css('--cloud-dot');
-      data.cloud.forEach(function(pt){
-        var p = worldToPx(pt, w, h, b);
-        ctx.beginPath();
-        ctx.arc(p[0], p[1], 1.7, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    }
+    // clean manifold trace -- drawn every frame (replaces the old jittered
+    // point-cloud rendering; no noise, matches the bias-variance widget's arc).
+    drawManifoldArc(ctx, w, h, b, data);
 
     if (atEnd){
       // reveal, at the final frame: the anomaly-score landscape H(y) across the whole plane,
@@ -539,20 +504,7 @@ footer strong{ color: var(--fg); font-weight: 600; }
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(state.heatCanvas, 0, 0, state.heatCanvas.width, state.heatCanvas.height, 0, 0, w, h);
       }
-      if (data.manifold_curve && data.manifold_curve.length){
-        ctx.save();
-        ctx.strokeStyle = '#2f6fed';
-        ctx.lineWidth = 3;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        data.manifold_curve.forEach(function(pt, i){
-          var p = worldToPx(pt, w, h, b);
-          if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
-        });
-        ctx.stroke();
-        ctx.restore();
-      }
+      drawManifoldArc(ctx, w, h, b, data);   // redrawn on top of the opaque heatmap
     } else {
       // background velocity-field quiver: the network's actual v_theta(x,t), sampled on a
       // grid at the current t -- this is the field the hero point is moving through.
@@ -834,17 +786,6 @@ footer strong{ color: var(--fg); font-weight: 600; }
       state.heatCanvas = buildHeatCanvas(data, heatLo, heatHi);
       resizeAll();
       window.__ready = true;   // signal for headless frame-capture tooling
-    });
-  }
-
-  if (els.datasetBtns){
-    els.datasetBtns.forEach(function(btn){
-      btn.addEventListener('click', function(){
-        if (btn.classList.contains('active')) return;
-        els.datasetBtns.forEach(function(b){ b.classList.remove('active'); });
-        btn.classList.add('active');
-        loadDataset(btn.getAttribute('data-src'));
-      });
     });
   }
 

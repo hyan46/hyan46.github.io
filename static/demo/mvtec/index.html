@@ -41,7 +41,20 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
 .caption strong{ color: var(--fg); font-weight: 600; }
 .legend-row{ display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .swatch-bar{ height: 10px; flex: 1; border-radius: 5px; background: linear-gradient(to right, #000000, #a80000, #ff4d00, #ffb300, #ffff66, #ffffff); }
+.class-select{ font-family: var(--font-mono); font-size: 12px; color: var(--fg);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 5px 8px; cursor: pointer; }
+/* .panel-head uses align-items:baseline to line up its h2/.state-label text children.
+   A <select> element's baseline metrics are inconsistent across browsers and would
+   otherwise render visibly offset from the title, so override it explicitly here. */
+.class-select-label{ align-self: center; }
+@media (max-width: 640px){
+  .class-select-label{ flex-basis: 100%; margin-left: 0 !important; justify-content: flex-start; }
+}
+.score-wrap{ width: 100%; height: 160px; }
+#scoreCanvas{ width: 100%; height: 160px; display: block; }
 </style>
+
 
 </head>
 <body>
@@ -51,11 +64,15 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     <div class="panel-head">
       <h2>Flow mismatching on a real image</h2>
       <span class="state-label" id="stateLabel">t = 0.03</span>
+      <label class="class-select-label" style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">class</span>
+        <select id="classSelect" class="class-select"></select>
+      </label>
     </div>
     <div class="stage">
       <div>
         <div class="scene-wrap"><canvas class="scene" id="sceneImg"></canvas></div>
-        <div class="scene-label">input test image (cable, swapped-wire defect)</div>
+        <div class="scene-label" id="imgLabel">input test image (cable, swapped-wire defect)</div>
       </div>
       <div>
         <div class="scene-wrap"><canvas class="scene" id="sceneHeat"></canvas></div>
@@ -80,6 +97,11 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
       end of the slider) is the final detector output, and localizes tightly to the actual defect.
     </p>
   </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Accumulated mismatch score</h2></div>
+    <div class="score-wrap"><canvas id="scoreCanvas"></canvas></div>
+    <p class="caption">Running <code>w(t)=t²</code>-weighted integral of the mean per-<em>t</em> heatmap value, up to the current scrub position.</p>
+  </div>
 </div>
 
 <script>
@@ -94,9 +116,11 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     playBtn: document.getElementById('playBtn'),
     tLabel: document.getElementById('tLabel'),
     stateLabel: document.getElementById('stateLabel'),
-    heatLabel: document.getElementById('heatLabel')
+    heatLabel: document.getElementById('heatLabel'),
+    imgLabel: document.getElementById('imgLabel')
   };
   var sceneImg = null, sceneHeat = null;
+  var scoreChart = null;   // NEW
 
   function setupCanvas(canvas){
     var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -113,7 +137,45 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     var si = setupCanvas(ci), sh = setupCanvas(ch);
     sceneImg = { canvas: ci, ctx: si.ctx, w: si.w, h: si.h };
     sceneHeat = { canvas: ch, ctx: sh.ctx, w: sh.w, h: sh.h };
+    var sc = document.getElementById('scoreCanvas');
+    var ss = setupCanvas(sc);
+    scoreChart = { canvas: sc, ctx: ss.ctx, w: ss.w, h: ss.h };
     render();
+  }
+
+  function meanNested(grid){
+    var s=0, n=0;
+    for (var r=0;r<grid.length;r++){ var row=grid[r]; for (var c=0;c<row.length;c++){ s+=row[c]; n++; } }
+    return s/n;
+  }
+
+  function computeAccumulatedSeries(t, frames, meanFn){
+    var N = t.length, m = frames.map(meanFn), w = t.map(function(ti){return ti*ti;});
+    var S = new Array(N); S[0] = 0;
+    for (var i=1;i<N;i++){ S[i] = S[i-1] + (w[i]*m[i] + w[i-1]*m[i-1])/2 * (t[i]-t[i-1]); }
+    return S;
+  }
+
+  function drawScoreChart(){
+    var c = scoreChart;
+    if (!c || !state.scoreSeries) return;
+    var ctx = c.ctx, w = c.w, h = c.h, S = state.scoreSeries, N = S.length;
+    var maxS = Math.max.apply(null, S) * 1.08 || 1, pad = 8;
+    var f = Math.min(state.frame, N - 1);   // clamp to N-1, the last REAL per-t frame —
+      // this series has no data point for the extra "combined" scrub position, so at
+      // that position the playhead simply parks at the right edge showing the final total.
+    function xAt(i){ return (i/(N-1)) * w; }
+    function yAt(v){ return h - pad - (v/maxS) * (h - 2*pad); }
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.13)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,h-pad); ctx.lineTo(w,h-pad); ctx.stroke();
+    ctx.beginPath();
+    for (var i=0;i<=f;i++){ var px=xAt(i), py=yAt(S[i]); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath(); ctx.arc(xAt(f), yAt(S[f]), 3, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(102,112,128,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xAt(f),0); ctx.lineTo(xAt(f),h-pad); ctx.stroke();
   }
 
   function hotColor(v){
@@ -227,6 +289,7 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     els.stateLabel.textContent = atEnd ? 'combined' : label;
     els.heatLabel.textContent = 'velocity-mismatch heatmap, ' + (atEnd ? 'combined' : label);
     els.scrub.value = Math.min(state.frame, nFrames);
+    drawScoreChart();
   }
 
   function tick(ts){
@@ -263,10 +326,34 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     return [sorted[Math.floor(sorted.length*0.01)], sorted[Math.floor(sorted.length*0.99)]];
   }
 
+  function populateSelect(manifest){
+    var sel = document.getElementById('classSelect');
+    sel.innerHTML = '';
+    var avail = manifest.classes.filter(function(c){ return c.available; });
+    avail.forEach(function(c){
+      var opt = document.createElement('option');
+      opt.value = c.file; opt.textContent = c.label;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function(){ loadData(sel.value); });
+    return avail;
+  }
+
+  function showLoadError(msg){
+    // Surface failures visibly instead of letting the page go blank. Appends to the existing
+    // .caption element rather than replacing state, so the LAST successfully loaded class
+    // stays on screen underneath the notice.
+    var cap = document.querySelector('.caption');
+    if (cap) cap.insertAdjacentHTML('afterbegin',
+      '<strong style="color:#c0392b;">Load error: ' + msg + '. Showing last loaded class.</strong><br>');
+    console.error('MVTec demo load error:', msg);
+  }
+
   function loadData(url){
     window.__ready = false;
     return fetch(url).then(function(r){ return r.json(); }).then(function(data){
       state.data = data;
+      state.scoreSeries = computeAccumulatedSeries(data.t, data.frames, meanNested);
       state.heatCanvases = data.frames.map(function(f){
         var range = percentileRange(f);
         return buildHeatCanvas(f, range[0], range[1]);
@@ -277,12 +364,28 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
       els.scrub.max = data.t.length;
       state.frame = 0; state.holding = false; state.playing = false;
       els.playBtn.textContent = 'Play';
+      document.querySelector('.eyebrow').textContent =
+        'Flow Mismatching · real MVTec-AD data (' + data.class_name + ', ' + data.anom_type + ' defect)';
+      els.imgLabel.textContent =
+        'input test image (' + data.class_name + ', ' + data.anom_type.replace(/_/g,' ') + ' defect)';
       resizeAll();
       window.__ready = true;
+    }).catch(function(err){
+      showLoadError(url + ' — ' + err.message);
     });
   }
 
-  loadData('mvtec_per_t_cable_swap_020.json');
+  fetch('mvtec_manifest.json').then(function(r){ return r.json(); }).then(function(manifest){
+    var avail = populateSelect(manifest);
+    if (!avail.length){
+      showLoadError('mvtec_manifest.json has no available:true entries');
+      return;   // guard: without this, avail[0] is undefined and loadData(undefined.file) throws
+                // a TypeError before anything renders.
+    }
+    loadData(avail[0].file);
+  }).catch(function(err){
+    showLoadError('mvtec_manifest.json — ' + err.message);
+  });
   requestAnimationFrame(tick);
 })();
 </script>

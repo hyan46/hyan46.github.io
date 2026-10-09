@@ -43,18 +43,18 @@ off-manifold target they visibly diverge, and that growing disagreement is
 the anomaly signal.
 
 
-**Try it yourself** — drag the time slider (or press play). It defaults to the
+**Try it yourself** — drag the time slider (or press play). The demo shows the
 paper's actual toy setup (Appendix B.1): an upper semicircle manifold, scored on
-the paper's own grid and aggregation rule, with a genuinely near-manifold
-anomaly (a harder, more subtle detection case than an off-manifold gap point);
-switch to a 3-cluster mixture with the toggle above the demo:
+the paper's own grid and aggregation rule, with a near-manifold anomaly placed
+closer to the boundary than a simple off-manifold gap — a harder, more subtle
+detection case.
 
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
   <iframe
     src="/demo/flow-mismatching/index.html"
     title="Flow Mismatching interactive demo"
-    style="width:100%;aspect-ratio:1500/1270;border:none;display:block;"
+    style="width:100%;aspect-ratio:1500/1120;border:none;display:block;"
     loading="lazy">
   </iframe>
 </div>
@@ -82,7 +82,7 @@ the weighted-combined view:
   <iframe
     src="/demo/bias-variance/index.html"
     title="Bias-variance trade-off across ODE time, interactive demo"
-    style="width:100%;aspect-ratio:900/1038;border:none;display:block;"
+    style="width:100%;aspect-ratio:900/1319;border:none;display:block;"
     loading="lazy">
   </iframe>
 </div>
@@ -92,17 +92,18 @@ the weighted-combined view:
 
 The toy examples above use synthetic 2D data so the mechanism is easy to see;
 the same method applies directly to real images. Below is the velocity-mismatch
-heatmap computed on a real MVTec-AD test image (cable category, swapped-wire
-defect) using the trained flow-mismatching model — no synthetic data, same
-per-$t$ computation and $w(t)=t^2$ time-weighting as the toy demos. The green
-outline marks the ground-truth defect region.
+heatmap computed on a real MVTec-AD test image — pick a category with the
+selector above the demo (more categories are added as they become available) —
+using the trained flow-mismatching model, no synthetic data, same per-$t$
+computation and $w(t)=t^2$ time-weighting as the toy demos. The green outline
+marks the ground-truth defect region.
 
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
   <iframe
     src="/demo/mvtec/index.html"
     title="Flow Mismatching on a real MVTec-AD image, interactive demo"
-    style="width:100%;aspect-ratio:950/774;border:none;display:block;"
+    style="width:100%;aspect-ratio:950/1058;border:none;display:block;"
     loading="lazy">
   </iframe>
 </div>

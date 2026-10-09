@@ -76,6 +76,8 @@ body{
   background: var(--surface-2);
 }
 canvas.scene{ width: 100%; height: 100%; display: block; }
+.score-wrap{ width: 100%; height: 160px; }
+#scoreCanvas{ width: 100%; height: 160px; display: block; }
 .transport{
   display: flex;
   align-items: center;
@@ -133,6 +135,7 @@ input[type="range"]{
 }
 </style>
 
+
 </head>
 <body>
 <div class="page">
@@ -162,6 +165,11 @@ input[type="range"]{
       (<strong>variance</strong>). The weighted combination is both sharp and smooth.
     </p>
   </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Accumulated mismatch score</h2></div>
+    <div class="score-wrap"><canvas id="scoreCanvas"></canvas></div>
+    <p class="caption">Running <code>w(t)=t²</code>-weighted integral of the mean per-<em>t</em> heatmap value, up to the current scrub position.</p>
+  </div>
 </div>
 
 <script>
@@ -190,6 +198,7 @@ input[type="range"]{
   };
 
   var scene = null;
+  var scoreChart = null;   // NEW — holds {ctx,w,h} for the accumulated-score canvas
 
   function setupCanvas(canvas){
     var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -207,7 +216,41 @@ input[type="range"]{
     var canvas = document.getElementById('scene');
     var s = setupCanvas(canvas);
     scene = { canvas: canvas, ctx: s.ctx, w: s.w, h: s.h };
+    var sc = document.getElementById('scoreCanvas');
+    var ss = setupCanvas(sc);
+    scoreChart = { canvas: sc, ctx: ss.ctx, w: ss.w, h: ss.h };
     render();
+  }
+
+  function meanFlat(arr){ var s=0; for (var i=0;i<arr.length;i++) s+=arr[i]; return s/arr.length; }
+  function computeAccumulatedSeries(t, frames, meanFn){
+    meanFn = meanFn || meanFlat;
+    var N = t.length, m = frames.map(meanFn), w = t.map(function(ti){return ti*ti;});
+    var S = new Array(N); S[0] = 0;
+    for (var i=1;i<N;i++){ S[i] = S[i-1] + (w[i]*m[i] + w[i-1]*m[i-1])/2 * (t[i]-t[i-1]); }
+    return S;
+  }
+
+  function drawScoreChart(){
+    var c = scoreChart;
+    if (!c || !state.scoreSeries) return;
+    var ctx = c.ctx, w = c.w, h = c.h, S = state.scoreSeries, N = S.length;
+    var maxS = Math.max.apply(null, S) * 1.08 || 1, pad = 8;
+    var f = Math.min(state.frame, N - 1);   // clamp to N-1, the last REAL per-t frame —
+      // this series has no data point for the extra "combined" scrub position, so at
+      // that position the playhead simply parks at the right edge showing the final total.
+    function xAt(i){ return (i/(N-1)) * w; }
+    function yAt(v){ return h - pad - (v/maxS) * (h - 2*pad); }
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.13)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0,h-pad); ctx.lineTo(w,h-pad); ctx.stroke();
+    ctx.beginPath();
+    for (var i=0;i<=f;i++){ var px=xAt(i), py=yAt(S[i]); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath(); ctx.arc(xAt(f), yAt(S[f]), 3, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(102,112,128,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xAt(f),0); ctx.lineTo(xAt(f),h-pad); ctx.stroke();
   }
 
   function computeBounds(data){
@@ -285,6 +328,7 @@ input[type="range"]{
     els.tLabel.textContent = label;
     els.stateLabel.textContent = atEnd ? 'combined' : label;
     els.scrub.value = Math.min(state.frame, nFrames);
+    drawScoreChart();
   }
 
   function tick(ts){
@@ -336,6 +380,7 @@ input[type="range"]{
     window.__ready = false;
     return fetch(url).then(function(r){ return r.json(); }).then(function(data){
       state.data = data;
+      state.scoreSeries = computeAccumulatedSeries(data.ts_frames, data.frames, meanFlat);
       state.bounds = computeBounds(data);
       var nx = data.heat_grid_nx, ny = data.heat_grid_ny;
       state.heatCanvases = data.frames.map(function(f){

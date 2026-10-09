@@ -1,0 +1,19 @@
+{
+  "classes": [
+    {"class_name":"cable","anom_type":"cable_swap","img_stem":"020","label":"Cable — swapped wire","file":"mvtec_per_t_cable_swap_020.json","available":true},
+    {"class_name":"bottle","anom_type":"broken_large","img_stem":"TBD","label":"Bottle — broken (large)","file":"mvtec_per_t_bottle_broken_large_TBD.json","available":false},
+    {"class_name":"capsule","anom_type":"crack","img_stem":"TBD","label":"Capsule — crack","file":"mvtec_per_t_capsule_crack_TBD.json","available":false},
+    {"class_name":"carpet","anom_type":"hole","img_stem":"TBD","label":"Carpet — hole","file":"mvtec_per_t_carpet_hole_TBD.json","available":false},
+    {"class_name":"grid","anom_type":"broken","img_stem":"TBD","label":"Grid — broken","file":"mvtec_per_t_grid_broken_TBD.json","available":false},
+    {"class_name":"hazelnut","anom_type":"crack","img_stem":"TBD","label":"Hazelnut — crack","file":"mvtec_per_t_hazelnut_crack_TBD.json","available":false},
+    {"class_name":"leather","anom_type":"cut","img_stem":"TBD","label":"Leather — cut","file":"mvtec_per_t_leather_cut_TBD.json","available":false},
+    {"class_name":"metal_nut","anom_type":"scratch","img_stem":"TBD","label":"Metal nut — scratch","file":"mvtec_per_t_metal_nut_scratch_TBD.json","available":false},
+    {"class_name":"pill","anom_type":"crack","img_stem":"TBD","label":"Pill — crack","file":"mvtec_per_t_pill_crack_TBD.json","available":false},
+    {"class_name":"screw","anom_type":"scratch_neck","img_stem":"TBD","label":"Screw — scratch (neck)","file":"mvtec_per_t_screw_scratch_neck_TBD.json","available":false},
+    {"class_name":"tile","anom_type":"crack","img_stem":"TBD","label":"Tile — crack","file":"mvtec_per_t_tile_crack_TBD.json","available":false},
+    {"class_name":"toothbrush","anom_type":"defective","img_stem":"TBD","label":"Toothbrush — defective","file":"mvtec_per_t_toothbrush_defective_TBD.json","available":false},
+    {"class_name":"transistor","anom_type":"damaged_case","img_stem":"TBD","label":"Transistor — damaged case","file":"mvtec_per_t_transistor_damaged_case_TBD.json","available":false},
+    {"class_name":"wood","anom_type":"scratch","img_stem":"TBD","label":"Wood — scratch","file":"mvtec_per_t_wood_scratch_TBD.json","available":false},
+    {"class_name":"zipper","anom_type":"broken_teeth","img_stem":"TBD","label":"Zipper — broken teeth","file":"mvtec_per_t_zipper_broken_teeth_TBD.json","available":false}
+  ]
+}
