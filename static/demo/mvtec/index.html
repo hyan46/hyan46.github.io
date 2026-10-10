@@ -406,10 +406,13 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
       state.heatCanvases.push(buildHeatCanvas(data.heatmap_final, finalRange[0], finalRange[1]));
 
       var cumGrids = computeCumulativeGridsNested(data.t, data.frames);
-      var cumPool = [].concat.apply([], cumGrids.map(function(g){ return [].concat.apply([], g); }));
-      var cumSorted = cumPool.slice().sort(function(a,b){return a-b;});
-      var cumLo = cumSorted[Math.floor(cumSorted.length*0.01)], cumHi = cumSorted[Math.floor(cumSorted.length*0.99)];
-      state.heatCanvasesCumulative = cumGrids.map(function(g){ return buildHeatCanvas(g, cumLo, cumHi); });
+      // Normalized PER STEP (not one shared range across all steps) -- a shared range is
+      // dominated by the much larger late-step values, so early steps (barely any integral
+      // accumulated yet) would all collapse to black with no visible structure.
+      state.heatCanvasesCumulative = cumGrids.map(function(g){
+        var r = percentileRange(g);
+        return buildHeatCanvas(g, r[0], r[1]);
+      });
 
       state.imgCanvas = buildImageCanvas(data.image);
       els.scrub.max = data.t.length;
