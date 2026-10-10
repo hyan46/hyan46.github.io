@@ -76,6 +76,9 @@ body{
   background: var(--surface-2);
 }
 canvas.scene{ width: 100%; height: 100%; display: block; }
+.stage{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px){ .stage{ grid-template-columns: 1fr; } }
+.scene-label{ font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); text-align: center; margin-top: 6px; }
 .score-wrap{ width: 100%; height: 160px; }
 #scoreCanvas{ width: 100%; height: 160px; display: block; }
 .transport{
@@ -135,7 +138,6 @@ input[type="range"]{
 }
 </style>
 
-
 </head>
 <body>
 <div class="page">
@@ -145,7 +147,16 @@ input[type="range"]{
       <h2>Bias-variance trade-off across ODE time</h2>
       <span class="state-label" id="stateLabel">t = 0.02</span>
     </div>
-    <div class="scene-wrap"><canvas class="scene" id="scene"></canvas></div>
+    <div class="stage">
+      <div>
+        <div class="scene-wrap"><canvas class="scene" id="scenePerT"></canvas></div>
+        <div class="scene-label">per-<em>t</em> mismatch, this step only</div>
+      </div>
+      <div>
+        <div class="scene-wrap"><canvas class="scene" id="sceneCumulative"></canvas></div>
+        <div class="scene-label">cumulative mismatch, <code>w(t)=t²</code>-weighted up to current <em>t</em></div>
+      </div>
+    </div>
     <div class="legend-row">
       <span>0.0 (low mismatch)</span>
       <div class="swatch-bar"></div>
@@ -157,12 +168,13 @@ input[type="range"]{
       <div class="t-label" id="tLabel">t = 0.02</div>
     </div>
     <p class="caption">
-      <strong>Drag the slider</strong> to step through the anomaly-score landscape at each ODE time
-      <em>t</em>, then continue past the end to see the <em>w(t)=t²</em>-weighted combination. At small
-      <em>t</em>, interpolated states are dominated by source noise: the low-mismatch region is a broad
-      blob covering the manifold's interior (<strong>bias</strong>, poor localization). At large <em>t</em>,
-      the low-mismatch region localizes tightly to the manifold but is visibly speckled
-      (<strong>variance</strong>). The weighted combination is both sharp and smooth.
+      <strong>Drag the slider</strong> to step through ODE time <em>t</em>. <strong>Left:</strong> the
+      anomaly-score landscape from this single <em>t</em> alone -- at small <em>t</em>, interpolated states
+      are dominated by source noise, so the low-mismatch region is a broad blob covering the manifold's
+      interior (<strong>bias</strong>, poor localization); at large <em>t</em>, it localizes tightly to the
+      manifold but is visibly speckled (<strong>variance</strong>). <strong>Right:</strong> the running
+      <em>w(t)=t²</em>-weighted combination of every step up to the current one -- by the final step this
+      equals the paper's actual detector output, both sharp and smooth.
     </p>
   </div>
   <div class="panel">
@@ -197,8 +209,9 @@ input[type="range"]{
     stateLabel: document.getElementById('stateLabel')
   };
 
-  var scene = null;
-  var scoreChart = null;   // NEW — holds {ctx,w,h} for the accumulated-score canvas
+  var scenePerT = null;
+  var sceneCumulative = null;
+  var scoreChart = null;   // holds {ctx,w,h} for the accumulated-score canvas
 
   function setupCanvas(canvas){
     var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -213,9 +226,12 @@ input[type="range"]{
   }
 
   function resizeAll(){
-    var canvas = document.getElementById('scene');
-    var s = setupCanvas(canvas);
-    scene = { canvas: canvas, ctx: s.ctx, w: s.w, h: s.h };
+    var c1 = document.getElementById('scenePerT');
+    var s1 = setupCanvas(c1);
+    scenePerT = { canvas: c1, ctx: s1.ctx, w: s1.w, h: s1.h };
+    var c2 = document.getElementById('sceneCumulative');
+    var s2 = setupCanvas(c2);
+    sceneCumulative = { canvas: c2, ctx: s2.ctx, w: s2.w, h: s2.h };
     var sc = document.getElementById('scoreCanvas');
     var ss = setupCanvas(sc);
     scoreChart = { canvas: sc, ctx: ss.ctx, w: ss.w, h: ss.h };
@@ -229,6 +245,26 @@ input[type="range"]{
     var S = new Array(N); S[0] = 0;
     for (var i=1;i<N;i++){ S[i] = S[i-1] + (w[i]*m[i] + w[i-1]*m[i-1])/2 * (t[i]-t[i-1]); }
     return S;
+  }
+
+  // Full-grid analogue of computeAccumulatedSeries: the same w(t)=t^2-weighted running
+  // trapezoidal integral, but per-pixel instead of reduced to a scalar mean -- i.e. the
+  // spatial "cumulative mismatch map" at each step, which by the final step equals data.combined.
+  function computeCumulativeGrids(t, frames){
+    var N = t.length, G = frames[0].length;
+    var grids = new Array(N);
+    var acc = new Float64Array(G);
+    grids[0] = new Float64Array(G); // t[0]*t[0] contributes nothing until paired with a next step
+    var w0 = t[0] * t[0];
+    for (var i = 1; i < N; i++){
+      var wi = t[i] * t[i], dt = t[i] - t[i - 1], wPrev = t[i - 1] * t[i - 1];
+      var fPrev = frames[i - 1], fCur = frames[i];
+      for (var k = 0; k < G; k++){
+        acc[k] += (wi * fCur[k] + wPrev * fPrev[k]) / 2 * dt;
+      }
+      grids[i] = acc.slice();
+    }
+    return grids;
   }
 
   function drawScoreChart(){
@@ -308,26 +344,31 @@ input[type="range"]{
     ctx.restore();
   }
 
-  function render(){
-    if (!scene || !state.data) return;
-    var data = state.data, ctx = scene.ctx, w = scene.w, h = scene.h, b = state.bounds;
+  function drawHeatScene(scene, heatCanvas, b, data){
+    var ctx = scene.ctx, w = scene.w, h = scene.h;
     ctx.clearRect(0, 0, w, h);
-
-    var nFrames = data.ts_frames.length;
-    var atEnd = state.frame >= nFrames;
-    var heatCanvas = state.heatCanvases[Math.min(state.frame, nFrames)];
-
     if (heatCanvas){
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(heatCanvas, 0, 0, heatCanvas.width, heatCanvas.height, 0, 0, w, h);
     }
     drawManifold(ctx, w, h, b, data);
+  }
 
-    var label = atEnd ? 'Weighted Combined (w(t)=t²)' : ('t = ' + data.ts_frames[state.frame].toFixed(2));
+  function render(){
+    if (!scenePerT || !sceneCumulative || !state.data) return;
+    var data = state.data, b = state.bounds;
+    var nFrames = data.ts_frames.length;
+    var f = Math.min(state.frame, nFrames - 1);
+
+    drawHeatScene(scenePerT, state.heatCanvasesPerT[f], b, data);
+    drawHeatScene(sceneCumulative, state.heatCanvasesCumulative[f], b, data);
+
+    var isLast = f === nFrames - 1;
+    var label = 't = ' + data.ts_frames[f].toFixed(2) + (isLast ? ' (final = Weighted Combined)' : '');
     els.tLabel.textContent = label;
-    els.stateLabel.textContent = atEnd ? 'combined' : label;
-    els.scrub.value = Math.min(state.frame, nFrames);
+    els.stateLabel.textContent = label;
+    els.scrub.value = f;
     drawScoreChart();
   }
 
@@ -336,7 +377,7 @@ input[type="range"]{
     if (!state.playing || !state.data) return;
     if (!state.lastTick) state.lastTick = ts;
     var elapsed = ts - state.lastTick;
-    var lastFrame = state.data.ts_frames.length; // combined is one past the last per-t frame
+    var lastFrame = state.data.ts_frames.length - 1;
 
     if (state.holding){
       if (ts >= state.holdUntil){
@@ -376,6 +417,11 @@ input[type="range"]{
 
   window.addEventListener('resize', resizeAll);
 
+  function percentileRange(flatArr){
+    var sorted = flatArr.slice().sort(function(a,b){return a-b;});
+    return [sorted[Math.floor(sorted.length*0.01)], sorted[Math.floor(sorted.length*0.99)]];
+  }
+
   function loadData(url){
     window.__ready = false;
     return fetch(url).then(function(r){ return r.json(); }).then(function(data){
@@ -383,11 +429,26 @@ input[type="range"]{
       state.scoreSeries = computeAccumulatedSeries(data.ts_frames, data.frames, meanFlat);
       state.bounds = computeBounds(data);
       var nx = data.heat_grid_nx, ny = data.heat_grid_ny;
-      state.heatCanvases = data.frames.map(function(f){
+
+      // left panel: per-t frames, same global lo/hi the data file already carries
+      state.heatCanvasesPerT = data.frames.map(function(f){
         return buildHeatCanvas(f, nx, ny, data.heat_lo, data.heat_hi);
       });
-      state.heatCanvases.push(buildHeatCanvas(data.combined, nx, ny, data.heat_lo, data.heat_hi));
-      els.scrub.max = data.ts_frames.length;
+
+      // right panel: the running cumulative grid at each step -- its own value range is
+      // very different from a single per-t frame's (it's an integral, not an instant snapshot),
+      // so it needs its own percentile normalization, computed across all steps pooled together.
+      var cumGrids = computeCumulativeGrids(data.ts_frames, data.frames);
+      // NOTE: cumGrids elements are Float64Array, not plain Array -- concat.apply does NOT
+      // spread typed arrays (only real Arrays satisfy IsConcatSpreadable), so flatten by hand.
+      var cumPool = [];
+      cumGrids.forEach(function(g){ for (var i = 0; i < g.length; i++) cumPool.push(g[i]); });
+      var cumRange = percentileRange(cumPool);
+      state.heatCanvasesCumulative = cumGrids.map(function(g){
+        return buildHeatCanvas(g, nx, ny, cumRange[0], cumRange[1]);
+      });
+
+      els.scrub.max = data.ts_frames.length - 1;
       state.frame = 0;
       state.holding = false;
       state.playing = false;

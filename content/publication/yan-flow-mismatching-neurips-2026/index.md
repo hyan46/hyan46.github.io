@@ -74,15 +74,15 @@ are far more sensitive to the specific noise draw. The paper's
 $w(t) = t^2$-weighted combination over time balances the two regimes,
 yielding a score map that is both sharp and smooth.
 
-**Drag the slider** to step through the landscape at each $t$, then past the end for
-the weighted-combined view:
+**Drag the slider** to compare, side by side, the per-$t$ landscape (left) against the
+running $w(t)=t^2$-weighted combination up to that point (right):
 
 {{< rawhtml >}}
 <div style="max-width:900px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
   <iframe
     src="/demo/bias-variance/index.html"
     title="Bias-variance trade-off across ODE time, interactive demo"
-    style="width:100%;aspect-ratio:900/1319;border:none;display:block;"
+    style="width:100%;aspect-ratio:900/988;border:none;display:block;"
     loading="lazy">
   </iframe>
 </div>
@@ -103,7 +103,7 @@ marks the ground-truth defect region.
   <iframe
     src="/demo/mvtec/index.html"
     title="Flow Mismatching on a real MVTec-AD image, interactive demo"
-    style="width:100%;aspect-ratio:950/1058;border:none;display:block;"
+    style="width:100%;aspect-ratio:950/943;border:none;display:block;"
     loading="lazy">
   </iframe>
 </div>

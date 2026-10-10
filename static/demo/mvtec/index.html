@@ -27,8 +27,9 @@ body{ background: var(--bg); color: var(--fg); font-family: var(--font-body); pa
 .panel-head{ display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .panel-head h2{ font-family: var(--font-display); font-weight: 800; font-size: 22px; margin: 0; }
 .panel-head .state-label{ font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
-.stage{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 640px){ .stage{ grid-template-columns: 1fr; } }
+.stage{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px){ .stage{ grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px){ .stage{ grid-template-columns: 1fr; } }
 .scene-wrap{ position: relative; width: 100%; aspect-ratio: 1/1; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
 canvas.scene{ width: 100%; height: 100%; display: block; }
 .scene-label{ font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); text-align: center; }
@@ -55,7 +56,6 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
 #scoreCanvas{ width: 100%; height: 160px; display: block; }
 </style>
 
-
 </head>
 <body>
 <div class="page">
@@ -78,6 +78,10 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
         <div class="scene-wrap"><canvas class="scene" id="sceneHeat"></canvas></div>
         <div class="scene-label" id="heatLabel">velocity-mismatch heatmap, t = 0.03</div>
       </div>
+      <div>
+        <div class="scene-wrap"><canvas class="scene" id="sceneCumulative"></canvas></div>
+        <div class="scene-label" id="cumulativeLabel">cumulative mismatch, w(t)=t&sup2;-weighted up to current t</div>
+      </div>
     </div>
     <div class="legend-row">
       <span>0.0 (low mismatch)</span>
@@ -92,9 +96,11 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     <p class="caption">
       <strong>Drag the slider</strong> to see the velocity-mismatch heatmap evolve across ODE time
       <em>t</em>, computed directly on a real MVTec-AD test image (no synthetic toy data) using the
-      trained flow-mismatching model. The green outline marks the ground-truth defect region. As with
-      the toy example, early and late <em>t</em> are noisier; the time-weighted combination (past the
-      end of the slider) is the final detector output, and localizes tightly to the actual defect.
+      trained flow-mismatching model. The green outline marks the ground-truth defect region.
+      <strong>Middle:</strong> this single <em>t</em> alone -- early and late <em>t</em> are noisier.
+      <strong>Right:</strong> the running <em>w(t)=t&sup2;</em>-weighted combination of every step up to
+      the current one, which localizes tightly to the actual defect as it builds up. Past the end of the
+      slider, both panels show the final, fully time-weighted detector output.
     </p>
   </div>
   <div class="panel">
@@ -117,10 +123,11 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     tLabel: document.getElementById('tLabel'),
     stateLabel: document.getElementById('stateLabel'),
     heatLabel: document.getElementById('heatLabel'),
-    imgLabel: document.getElementById('imgLabel')
+    imgLabel: document.getElementById('imgLabel'),
+    cumulativeLabel: document.getElementById('cumulativeLabel')
   };
-  var sceneImg = null, sceneHeat = null;
-  var scoreChart = null;   // NEW
+  var sceneImg = null, sceneHeat = null, sceneCumulative = null;
+  var scoreChart = null;
 
   function setupCanvas(canvas){
     var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -133,10 +140,11 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
   }
 
   function resizeAll(){
-    var ci = document.getElementById('sceneImg'), ch = document.getElementById('sceneHeat');
-    var si = setupCanvas(ci), sh = setupCanvas(ch);
+    var ci = document.getElementById('sceneImg'), ch = document.getElementById('sceneHeat'), cc = document.getElementById('sceneCumulative');
+    var si = setupCanvas(ci), sh = setupCanvas(ch), scc = setupCanvas(cc);
     sceneImg = { canvas: ci, ctx: si.ctx, w: si.w, h: si.h };
     sceneHeat = { canvas: ch, ctx: sh.ctx, w: sh.w, h: sh.h };
+    sceneCumulative = { canvas: cc, ctx: scc.ctx, w: scc.w, h: scc.h };
     var sc = document.getElementById('scoreCanvas');
     var ss = setupCanvas(sc);
     scoreChart = { canvas: sc, ctx: ss.ctx, w: ss.w, h: ss.h };
@@ -284,10 +292,23 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
       drawMaskOutline(sceneHeat.ctx, sceneHeat.w, sceneHeat.h, data.mask);
     }
 
+    if (sceneCumulative && state.heatCanvasesCumulative){
+      var cf = Math.min(state.frame, state.heatCanvasesCumulative.length - 1);
+      var cumCanvas = state.heatCanvasesCumulative[cf];
+      sceneCumulative.ctx.clearRect(0, 0, sceneCumulative.w, sceneCumulative.h);
+      if (cumCanvas){
+        sceneCumulative.ctx.imageSmoothingEnabled = true;
+        sceneCumulative.ctx.imageSmoothingQuality = 'high';
+        sceneCumulative.ctx.drawImage(cumCanvas, 0, 0, cumCanvas.width, cumCanvas.height, 0, 0, sceneCumulative.w, sceneCumulative.h);
+      }
+      drawMaskOutline(sceneCumulative.ctx, sceneCumulative.w, sceneCumulative.h, data.mask);
+    }
+
     var label = atEnd ? 'Weighted Combined (w(t)=t²)' : ('t = ' + data.t[state.frame].toFixed(2));
     els.tLabel.textContent = label;
     els.stateLabel.textContent = atEnd ? 'combined' : label;
     els.heatLabel.textContent = 'velocity-mismatch heatmap, ' + (atEnd ? 'combined' : label);
+    if (els.cumulativeLabel) els.cumulativeLabel.textContent = 'cumulative mismatch, ' + (atEnd ? 'final (combined)' : label);
     els.scrub.value = Math.min(state.frame, nFrames);
     drawScoreChart();
   }
@@ -349,6 +370,29 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
     console.error('MVTec demo load error:', msg);
   }
 
+  // Nested-grid analogue of computeAccumulatedSeries: same w(t)=t^2-weighted running
+  // trapezoidal integral, per-pixel instead of reduced to a scalar mean, so by the final
+  // real frame it's the full spatial "cumulative mismatch map" (not claimed to equal
+  // heatmap_final exactly -- that's the project's own min-voting/lambda aggregation,
+  // this is a simple, transparent client-side integral for exploration).
+  function computeCumulativeGridsNested(t, frames){
+    var N = t.length, ny = frames[0].length, nx = frames[0][0].length;
+    var acc = [];
+    for (var r = 0; r < ny; r++) acc.push(new Float64Array(nx));
+    var grids = new Array(N);
+    grids[0] = acc.map(function(row){ return Array.prototype.slice.call(row); });
+    for (var i = 1; i < N; i++){
+      var wi = t[i]*t[i], wPrev = t[i-1]*t[i-1], dt = t[i]-t[i-1];
+      var fPrev = frames[i-1], fCur = frames[i];
+      for (var r = 0; r < ny; r++){
+        var accRow = acc[r], prevRow = fPrev[r], curRow = fCur[r];
+        for (var c = 0; c < nx; c++){ accRow[c] += (wi*curRow[c] + wPrev*prevRow[c])/2*dt; }
+      }
+      grids[i] = acc.map(function(row){ return Array.prototype.slice.call(row); });
+    }
+    return grids;
+  }
+
   function loadData(url){
     window.__ready = false;
     return fetch(url).then(function(r){ return r.json(); }).then(function(data){
@@ -360,6 +404,13 @@ input[type="range"]{ flex: 1; min-width: 0; accent-color: #c0392b; }
       });
       var finalRange = percentileRange(data.heatmap_final);
       state.heatCanvases.push(buildHeatCanvas(data.heatmap_final, finalRange[0], finalRange[1]));
+
+      var cumGrids = computeCumulativeGridsNested(data.t, data.frames);
+      var cumPool = [].concat.apply([], cumGrids.map(function(g){ return [].concat.apply([], g); }));
+      var cumSorted = cumPool.slice().sort(function(a,b){return a-b;});
+      var cumLo = cumSorted[Math.floor(cumSorted.length*0.01)], cumHi = cumSorted[Math.floor(cumSorted.length*0.99)];
+      state.heatCanvasesCumulative = cumGrids.map(function(g){ return buildHeatCanvas(g, cumLo, cumHi); });
+
       state.imgCanvas = buildImageCanvas(data.image);
       els.scrub.max = data.t.length;
       state.frame = 0; state.holding = false; state.playing = false;
