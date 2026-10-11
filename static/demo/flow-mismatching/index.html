@@ -792,6 +792,27 @@ footer strong{ color: var(--fg); font-weight: 600; }
   loadDataset('data_halfmoon.json');
   requestAnimationFrame(tick);
 })();
+
+(function(){
+  // reports real content height to the parent page so it can size this iframe exactly --
+  // a fixed CSS aspect-ratio on the embedding <iframe> is wrong here because several
+  // elements (transport bar, compare chart) have fixed px height while only the
+  // scene-wrap panels scale with width, so required height is NOT linear in width.
+  function reportHeight(){
+    try {
+      var h = document.documentElement.scrollHeight;
+      if (window.parent && window.parent !== window){
+        window.parent.postMessage({ type: 'fm-widget-resize', height: h }, '*');
+      }
+    } catch (e) {}
+  }
+  if (window.ResizeObserver) new ResizeObserver(reportHeight).observe(document.body);
+  window.addEventListener('load', reportHeight);
+  window.addEventListener('resize', reportHeight);
+  setTimeout(reportHeight, 50);
+  setTimeout(reportHeight, 500);
+  setTimeout(reportHeight, 1500);
+})();
 </script>
 
 </body>

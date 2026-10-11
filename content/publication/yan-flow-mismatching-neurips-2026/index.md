@@ -52,9 +52,11 @@ detection case.
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
   <iframe
+    id="fm-toy-frame"
     src="/demo/flow-mismatching/index.html"
     title="Flow Mismatching interactive demo"
-    style="width:100%;aspect-ratio:1500/1120;border:none;display:block;"
+    style="width:100%;height:900px;border:none;display:block;"
+    scrolling="no"
     loading="lazy">
   </iframe>
 </div>
@@ -80,9 +82,11 @@ running $w(t)=t^2$-weighted combination up to that point (right):
 {{< rawhtml >}}
 <div style="max-width:900px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
   <iframe
+    id="fm-bv-frame"
     src="/demo/bias-variance/index.html"
     title="Bias-variance trade-off across ODE time, interactive demo"
-    style="width:100%;aspect-ratio:900/988;border:none;display:block;"
+    style="width:100%;height:990px;border:none;display:block;"
+    scrolling="no"
     loading="lazy">
   </iframe>
 </div>
@@ -101,12 +105,48 @@ marks the ground-truth defect region.
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
   <iframe
+    id="fm-mvtec-frame"
     src="/demo/mvtec/index.html"
     title="Flow Mismatching on a real MVTec-AD image, interactive demo"
-    style="width:100%;aspect-ratio:950/943;border:none;display:block;"
+    style="width:100%;height:1500px;border:none;display:block;"
+    scrolling="no"
     loading="lazy">
   </iframe>
 </div>
+{{< /rawhtml >}}
+
+{{< rawhtml >}}
+<script>
+(function(){
+  // the three demo iframes above each postMessage their real content height on load/
+  // resize (see each widget's own reportHeight script) -- a fixed CSS aspect-ratio
+  // can't track content height here since several layout elements have fixed px
+  // height while only some panels scale with width, so required height isn't linear
+  // in width. This sets each iframe's height to exactly what its content needs, so
+  // there is never an internal scrollbar.
+  // debounced: the very first message from a widget can report an inflated
+  // transient height (DOM not fully populated by its data-fetch yet) that
+  // self-corrects within ~200ms -- waiting for a short quiet period before
+  // applying avoids ever visibly flashing that transient size.
+  var pending = {};
+  window.addEventListener('message', function(ev){
+    if (!ev.data || ev.data.type !== 'fm-widget-resize') return;
+    var ids = ['fm-toy-frame', 'fm-bv-frame', 'fm-mvtec-frame'];
+    for (var i = 0; i < ids.length; i++){
+      var id = ids[i];
+      var el = document.getElementById(id);
+      if (el && el.contentWindow === ev.source){
+        var h = Math.ceil(ev.data.height);
+        if (pending[id]) clearTimeout(pending[id]);
+        pending[id] = setTimeout(function(elRef, hRef){
+          return function(){ elRef.style.height = hRef + 'px'; };
+        }(el, h), 150);
+        break;
+      }
+    }
+  });
+})();
+</script>
 {{< /rawhtml >}}
 
 ---
