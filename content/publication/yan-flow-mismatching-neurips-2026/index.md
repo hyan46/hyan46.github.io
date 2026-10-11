@@ -22,6 +22,8 @@ abstract: 'We propose Flow Mismatching, an unsupervised anomaly detection method
 summary: 'Unsupervised anomaly detection from the mismatch between a flow matching model''s learned velocity and the direct velocity toward a test image, giving pixel-wise heatmaps and image-level scores.'
 ---
 
+{{< figure src="figures/teaser.png" alt="Velocity mismatch in the (x,t) plane: affine paths toward a normal target stay aligned with the learned flow, while paths toward an anomalous target visibly diverge from it." caption="<span class=\"figure-number\">Figure 1: </span>**Velocity mismatch in the $(x,t)$ plane.** Light arrows show the learned flow $v_\\theta(x,t)$ from noise to normal data. Affine paths from the same starting noise $x_0$ target either a normal sample (green) or an anomalous sample (red). At selected times, the predicted velocity (blue) aligns with the geometric velocity toward normal targets but disagrees for anomalous targets — that disagreement is the anomaly signal Flow Mismatching detects." width="90%" >}}
+
 ## Overview {#overview}
 
 **Flow Mismatching** is an **unsupervised anomaly detection** method that does not rely on reconstruction. A **flow matching** model is trained only on normal images. For a test image, we compare the model's learned velocity field with the direct geometric velocity toward that image along paths from noise. Where the two disagree, the image is anomalous; aggregating these **velocity mismatches** across time steps and paths gives pixel-wise anomaly heatmaps and image-level scores.
