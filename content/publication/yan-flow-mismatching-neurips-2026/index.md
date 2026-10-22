@@ -89,7 +89,7 @@ $$
 Z_t^{(k)}(i) = \big\|v_\theta(x_t^k,t)(i) - g^k(i)\big\|_2^2, \qquad \delta_t(i) = \mathcal A\big(\{Z_t^{(k)}(i)\}_{k=1}^{K}\big).
 $$
 
-The default is **minimum**, $\delta_t^{\min}(i)=\min_k Z_t^{(k)}(i)$: a conservative vote where a pixel only scores high if *every* seed finds it anomalous. One good seed is enough to clear a normal pixel; no seed clears a genuinely anomalous one. (Why this needs the seeds to stay random, not chosen — see below.)
+The default is **minimum**, $\delta_t^{\min}(i)=\min_k Z_t^{(k)}(i)$: a conservative vote where a pixel only scores high if *every* seed finds it anomalous. One good seed is enough to clear a normal pixel; no seed clears a genuinely anomalous one.
 
 ### Aggregating across time: the heatmap and the anomaly score
 
@@ -116,10 +116,6 @@ The paper extends this from the oracle $v_p$ to the **learned** $v_\theta$: the 
 ### Adjustable test-time compute
 
 $K$ and $T$ are pure compute knobs — more independent, parallelizable forward passes through the same frozen $v_\theta$, $O(KT)$ total, no retraining. Low $K,T$ for throughput, higher for accuracy.
-
-### Why random seeds, not a search
-
-Why not just solve for the seed that best explains $y$? On a 1D version of this model, that's provably fatal: completing the square gives $m(x_0) = b(t)^2\,(x_0 - x_0^\star)^2$, so *some* seed always drives the mismatch to exactly zero — for any image, anomalous or not. Minimum-voting only works because it picks among $K$ *random* seeds, and a genuine anomaly's zero-mismatch seed sits so far in the tail of $\mathcal N(0,I)$ that random draws essentially never find it — while a normal image's is common enough that one usually does. The randomness is where the method's power comes from, not an implementation detail.
 
 ---
 
