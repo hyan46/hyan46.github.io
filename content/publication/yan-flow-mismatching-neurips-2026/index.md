@@ -63,67 +63,63 @@ Accepted to **NeurIPS 2026**.
 
 ### Problem setup
 
-We assume access only to a training set of **normal** (anomaly-free) images, drawn from a distribution $p_{\text{data}}$. A conditional flow matching model $v_\theta(x,t)$ is trained on this normal data alone, learning a velocity field that transports a standard Gaussian prior $\mathcal N(0,I)$ to $p_{\text{data}}$ — exactly the model used in the toy demo above. At test time, given a possibly anomalous image $y$, the goal is a pixel-wise anomaly **heatmap** $H$ and an image-level anomaly **score** $S$. No reconstruction, no inversion, no auxiliary memory bank or pretrained feature extractor is involved anywhere in this pipeline — every quantity below is a forward pass through $v_\theta$.
+The model is trained only on **normal** images $p_{\text{data}}$: a conditional flow matching model $v_\theta(x,t)$ learns to transport $\mathcal N(0,I)$ to $p_{\text{data}}$ — the same model as in the demo above. At test time, given image $y$, the goal is a pixel-wise **heatmap** $H$ and a **score** $S$ — no reconstruction, inversion, memory bank, or pretrained features, just forward passes through $v_\theta$.
 
 ### Velocity mismatch along a single path
 
-Draw one noise seed $x_0 \sim \mathcal N(0,I)$ and form the deterministic affine path toward the test image, together with the **geometric velocity** that path implies:
+Draw $x_0\sim\mathcal N(0,I)$ and form the path toward $y$, with its **geometric velocity**:
 
 $$
 x_t = (1-t)\,x_0 + t\,y, \qquad g(x_0, y, t) = y - x_0 = \frac{d}{dt}x_t, \qquad t\in[0,1].
 $$
 
-If $y$ is anomalous, $g$ is trying to reproduce content the model never saw during training, while $v_\theta$ — having only ever learned to transport toward normal images — keeps pulling toward normal-looking features. The two velocities disagree. If $y$ is normal, both velocities point the same way and agree closely. This is exactly the divergence you can see live in the interactive demo above: solid arrows ($v_\theta$) track the dashed true heading ($g$) for the normal target, and visibly peel away from it for the off-manifold target.
-
-Concretely, the anomaly indicator at pixel $i$ is the **per-pixel squared discrepancy**
+If $y$ is anomalous, $g$ points toward content $v_\theta$ never learned to produce, so the two disagree — exactly the divergence in the demo above, where solid arrows ($v_\theta$) track the dashed true heading ($g$) for normal targets and peel away for anomalous ones. The per-pixel anomaly indicator is
 
 $$
 \big\| v_\theta(x_t,t)(i) - g(x_0,y,t)(i) \big\|_2^2,
 $$
 
-averaged over the RGB channels at that pixel.
+averaged over RGB channels.
 
 ### Aggregating across paths: why minimum voting
 
-A single noise draw $x_0$ is noisy — one unlucky seed can make even a normal image look locally mismatched, or an anomalous one look locally clean. Flow Mismatching draws $K$ **independent** seeds $x_0^1,\dots,x_0^K\sim\mathcal N(0,I)$, forms $K$ independent paths, and combines the $K$ per-pixel discrepancies $Z_t^{(k)}(i)$ with a **path aggregator** $\mathcal A$:
+One seed is noisy, so Flow Mismatching draws $K$ independent seeds and combines the per-pixel discrepancies with an aggregator $\mathcal A$:
 
 $$
 Z_t^{(k)}(i) = \big\|v_\theta(x_t^k,t)(i) - g^k(i)\big\|_2^2, \qquad \delta_t(i) = \mathcal A\big(\{Z_t^{(k)}(i)\}_{k=1}^{K}\big).
 $$
 
-Three natural choices for $\mathcal A$: the **average** (unbiased for the population mismatch), an **$\alpha$-percentile**, or the **minimum**, $\delta_t^{\min}(i)=\min_k Z_t^{(k)}(i)$. Flow Mismatching uses **minimum** by default, and deliberately so — it is a conservative consensus vote: a pixel only keeps a high score if it looks anomalous across *every* sampled noise draw, not just one. For a normal pixel, it only takes one of the $K$ seeds to land near a good explanation to drive the score down; for a genuinely anomalous pixel, *no* seed can explain it well, so the minimum stays high. (This is also why the detector's robustness depends on those seeds being **random and uninformed**, not chosen — see "Why random seeds, not a search" below.)
+The default is **minimum**, $\delta_t^{\min}(i)=\min_k Z_t^{(k)}(i)$: a conservative vote where a pixel only scores high if *every* seed finds it anomalous. One good seed is enough to clear a normal pixel; no seed clears a genuinely anomalous one. (Why this needs the seeds to stay random, not chosen — see below.)
 
 ### Aggregating across time: the heatmap and the anomaly score
 
-Different $t$ query the model at different noise levels, with different amounts of signal and different estimator stability (small $t$: path state is dominated by source noise — smooth but weak signal; large $t$: path state sits near the data manifold — sharp but higher-variance). Rather than pick one $t$, Flow Mismatching discretizes $T$ interior time points and combines them with a weight $w(t)$:
+Small $t$ gives a smooth but weak signal; large $t$ a sharp but noisier one. Flow Mismatching combines $T$ time points with a weight $w(t)$:
 
 $$
 H(i) = \frac{1}{|\mathcal T|}\sum_{t\in\mathcal T} w(t)\,\delta_t(i), \qquad S = \max_{i\in\Omega} H(i) \;+\; \frac{1}{|\Omega_{\text{top1}}|}\sum_{i\in\Omega_{\text{top1}}} H(i),
 $$
 
-where $\Omega$ is the pixel domain and $\Omega_{\text{top1}}$ the top 1% of heatmap values (a robust stand-in for "max", since any single pixel can be noisy). The weight is $w(t) = t^2$ — not a tuned hyperparameter, but the specific curve that falls out of **inverse-variance weighting** of the endpoint-estimation error in $y$-space once that error is converted to velocity units (the conversion introduces a $(1-t)^2$ scaling, which combined with inverse-variance weighting yields $t^2$; full derivation in the paper, Proposition 3.2). The interactive demo below shows exactly this trade-off: per-$t$ landscapes on the left (biased-but-smooth at small $t$, sharp-but-speckled at large $t$) and the running $w(t)=t^2$-weighted combination on the right, which stays both sharp and smooth throughout.
+with $w(t) = t^2$ — derived, not tuned, from inverse-variance weighting of the endpoint error once converted to velocity units (paper, Proposition 3.2). The demo below shows this trade-off directly: per-$t$ maps on the left, the running $t^2$-weighted combination on the right.
 
 ### Why it works: a population-level guarantee
 
-This is the part a demo can't show directly, so it's worth stating precisely. Consider the population (infinite-$K$, continuous-$t$) version of the same score, under oracle access to $v_p(t,x):=\mathbb E_p[y-x_0\mid x_t=x]$, the velocity field that conditional flow matching would converge to with infinite normal training data. For a test distribution $q$ (normal data has $q=p$; an anomaly distribution has $q\neq p$), the paper's main theoretical result is an **exact decomposition**:
+Under oracle access to $v_p(t,x):=\mathbb E_p[y-x_0\mid x_t=x]$ — what flow matching converges to with infinite normal data — the paper proves an exact decomposition for any test distribution $q$:
 
 $$
-t^2\,\mathbb E_q\!\left[\|v_p(t,X_t)-(Y-X_0)\|_2^2\right] \;=\; \underbrace{\frac{t^2}{(1-t)^2}D_q(t)}_{\text{weighted denoising error}} \;+\; \underbrace{(1-t)^2\,J(q_t\Vert p_t)}_{\text{Fisher divergence}},
+t^2\,\mathbb E_q\!\left[\|v_p(t,X_t)-(Y-X_0)\|_2^2\right] \;=\; \underbrace{\frac{t^2}{(1-t)^2}D_q(t)}_{\text{denoising error}} \;+\; \underbrace{(1-t)^2\,J(q_t\Vert p_t)}_{\text{Fisher divergence}}.
 $$
 
-where $D_q(t)=\mathbb E_q\|Y-\mu_q(X_t)\|_2^2$ is an endpoint-estimation error that stays bounded even as $t\to 1$, and $J(q_t\Vert p_t)$ is the Fisher divergence between the score functions of the test-path marginal $q_t$ and the normal-path marginal $p_t$ — it measures how far the *distribution* $y$ was drawn from has drifted from the normal distribution the model was trained on.
+On normal images ($q=p$) the Fisher term vanishes — only the irreducible denoising floor remains. On anomalies it's strictly positive and *is* the separation signal: it depends only on how different the anomaly's statistics are from normal, not on model error. Early $t$ leans on the Fisher term, late $t$ on the bounded denoising term — one reason the $t^2$-weighted sum beats reading off a single $t$.
 
-**On a normal image** ($q=p$), $q_t\equiv p_t$, so the Fisher term vanishes identically — only the irreducible denoising-error term remains, the same floor every normal image sits on. **On an anomalous image**, the Fisher term is strictly positive and is exactly the quantity that separates anomalies from normal images in the population limit: it doesn't depend on model error at all, only on how different the anomaly's local statistics are from normal. This is also precisely why aggregating across time matters, not just across paths: the decomposition shows early times lean on the Fisher (score-mismatch) term while late times lean on the (bounded) denoising term, so a single $t$ only ever sees part of the signal — the $w(t)=t^2$-weighted sum is the one combination that an inverse-variance argument says is proportioned correctly.
-
-A natural follow-up question — what we actually *deploy* is the **learned** $v_\theta$, not the oracle $v_p$ — is addressed by a companion finite-sample/learned-field extension in the paper (and was independently re-derived and checked on this project's own toy and real 5-seed-trained checkpoints during the rebuttal process): the population identity above still holds with $v_\theta$ in place of $v_p$ up to an explicit, measurable field-approximation-error term, and ranking/false-positive-rate guarantees survive as long as that approximation error doesn't swamp the Fisher signal — which the paper verifies empirically stays true even far off-manifold.
+The paper extends this from the oracle $v_p$ to the **learned** $v_\theta$: the identity holds up to an explicit field-approximation-error term, and ranking guarantees survive as long as that error doesn't swamp the Fisher signal — verified even far off-manifold (and independently re-checked on this project's own toy and real 5-seed checkpoints during the rebuttal).
 
 ### Adjustable test-time compute
 
-$K$ (paths) and $T$ (time steps) are explicit, orthogonal compute knobs, not architecture choices — both only add independent, parallelizable forward passes through the same frozen $v_\theta$, at a total cost of $O(KT)$ evaluations per image. This gives a single detector that can run at low $K,T$ for high-throughput screening and scale up $K,T$ for accuracy-critical inspection, with no retraining in between — unlike reconstruction- or inversion-based detectors, where more "test-time compute" usually means an iterative optimization loop rather than a batch of independent forward passes.
+$K$ and $T$ are pure compute knobs — more independent, parallelizable forward passes through the same frozen $v_\theta$, $O(KT)$ total, no retraining. Low $K,T$ for throughput, higher for accuracy.
 
 ### Why random seeds, not a search
 
-It's tempting to ask: since minimum-voting over $K$ seeds is just approximating "the seed that best explains $y$," why not solve for that seed directly and skip the $K$ draws? On a simple 1D version of this model, that idea is provably catastrophic. Writing the mismatch as a function of the seed alone, $m(x_0) = \|v_\theta(x_t,t) - (y-x_0)\|^2$, completing the square shows $m(x_0) = b(t)^2\,(x_0 - x_0^\star)^2$ for an explicit $x_0^\star$ — meaning there is *always* some seed that drives the mismatch to exactly zero, for **any** image, normal or anomalous. Solving for it directly would silently defeat detection on every input. The reason minimum-voting works at all is that it only ever gets to pick among $K$ *independently, randomly drawn* seeds, and the zero-mismatch seed for a genuine anomaly sits so far in the tail of $\mathcal N(0,I)$ that $K$ random draws essentially never land near it — while for a normal image, a good-enough explaining seed is common enough that one of the $K$ draws usually finds it. The randomness of the seeds isn't an implementation detail to be optimized away; it's where the method's discriminating power actually comes from.
+Why not just solve for the seed that best explains $y$? On a 1D version of this model, that's provably fatal: completing the square gives $m(x_0) = b(t)^2\,(x_0 - x_0^\star)^2$, so *some* seed always drives the mismatch to exactly zero — for any image, anomalous or not. Minimum-voting only works because it picks among $K$ *random* seeds, and a genuine anomaly's zero-mismatch seed sits so far in the tail of $\mathcal N(0,I)$ that random draws essentially never find it — while a normal image's is common enough that one usually does. The randomness is where the method's power comes from, not an implementation detail.
 
 ---
 
