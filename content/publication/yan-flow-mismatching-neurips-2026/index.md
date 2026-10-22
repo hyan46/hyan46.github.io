@@ -67,7 +67,7 @@ The model is trained only on **normal** images $p_{\text{data}}$: a conditional 
 
 ### Velocity mismatch along a single path
 
-Draw $x_0\sim\mathcal N(0,I)$ and form the path toward $y$, with its **geometric velocity**:
+A single pixel's test is simple: does the model's velocity there match the direction a normal image would actually move? Draw $x_0\sim\mathcal N(0,I)$ and form the path toward $y$, with its **geometric velocity**:
 
 $$
 x_t = (1-t)\,x_0 + t\,y, \qquad g(x_0, y, t) = y - x_0 = \frac{d}{dt}x_t, \qquad t\in[0,1].
@@ -81,41 +81,32 @@ $$
 
 averaged over RGB channels.
 
-### Aggregating across paths: why minimum voting
+### Two knobs: more seeds, more time points
 
-One seed is noisy, so Flow Mismatching draws $K$ independent seeds and combines the per-pixel discrepancies with an aggregator $\mathcal A$:
+One path at one $t$ is too noisy to use directly. Flow Mismatching has exactly two knobs for trading compute for reliability, both just repeated forward passes through the same frozen $v_\theta$:
 
-$$
-Z_t^{(k)}(i) = \big\|v_\theta(x_t^k,t)(i) - g^k(i)\big\|_2^2, \qquad \delta_t(i) = \mathcal A\big(\{Z_t^{(k)}(i)\}_{k=1}^{K}\big).
-$$
+- **$K$ seeds, combined by minimum.** A single seed's $g$ is one arbitrary draw, so an unlucky seed can make a normal pixel look anomalous. Drawing $K$ independent seeds and taking the minimum fixes this: a pixel only scores high if *every* seed agrees. One good seed is enough to clear a normal pixel; no seed clears a genuinely anomalous one.
+  $$
+  Z_t^{(k)}(i) = \big\|v_\theta(x_t^k,t)(i) - g^k(i)\big\|_2^2, \qquad \delta_t(i) = \min_{k=1,\dots,K} Z_t^{(k)}(i).
+  $$
+- **$T$ time points, combined by $w(t)=t^2$.** Small $t$ gives a smooth but weak signal; large $t$ a sharp but noisier one. Weighting by $w(t)=t^2$ — derived, not tuned, from inverse-variance weighting of the endpoint error in velocity units (paper, Proposition 3.2) — lets the heatmap draw on both ends of that trade-off at once.
+  $$
+  H(i) = \frac{1}{|\mathcal T|}\sum_{t\in\mathcal T} w(t)\,\delta_t(i), \qquad S = \max_{i\in\Omega} H(i) \;+\; \frac{1}{|\Omega_{\text{top1}}|}\sum_{i\in\Omega_{\text{top1}}} H(i).
+  $$
 
-The default is **minimum**, $\delta_t^{\min}(i)=\min_k Z_t^{(k)}(i)$: a conservative vote where a pixel only scores high if *every* seed finds it anomalous. One good seed is enough to clear a normal pixel; no seed clears a genuinely anomalous one.
-
-### Aggregating across time: the heatmap and the anomaly score
-
-Small $t$ gives a smooth but weak signal; large $t$ a sharp but noisier one. Flow Mismatching combines $T$ time points with a weight $w(t)$:
-
-$$
-H(i) = \frac{1}{|\mathcal T|}\sum_{t\in\mathcal T} w(t)\,\delta_t(i), \qquad S = \max_{i\in\Omega} H(i) \;+\; \frac{1}{|\Omega_{\text{top1}}|}\sum_{i\in\Omega_{\text{top1}}} H(i),
-$$
-
-with $w(t) = t^2$ — derived, not tuned, from inverse-variance weighting of the endpoint error once converted to velocity units (paper, Proposition 3.2). The demo below shows this trade-off directly: per-$t$ maps on the left, the running $t^2$-weighted combination on the right.
+The demo below shows the $T$ trade-off directly: per-$t$ maps on the left, the running $t^2$-weighted combination on the right. $K$ and $T$ are pure compute knobs — $O(KT)$ forward passes total, no retraining. Low $K,T$ for throughput, higher for accuracy.
 
 ### Why it works: a population-level guarantee
 
 Under oracle access to $v_p(t,x):=\mathbb E_p[y-x_0\mid x_t=x]$ — what flow matching converges to with infinite normal data — the paper proves an exact decomposition for any test distribution $q$:
 
 $$
-t^2\,\mathbb E_q\!\left[\|v_p(t,X_t)-(Y-X_0)\|_2^2\right] \;=\; \underbrace{\frac{t^2}{(1-t)^2}D_q(t)}_{\text{denoising error}} \;+\; \underbrace{(1-t)^2\,J(q_t\Vert p_t)}_{\text{Fisher divergence}}.
+t^2\,\mathbb E_q\!\left[\|v_p(t,X_t)-(Y-X_0)\|_2^2\right] \;=\; \underbrace{\frac{t^2}{(1-t)^2}D_q(t)}_{\text{(I) irreducible noise}} \;+\; \underbrace{(1-t)^2\,J(q_t\Vert p_t)}_{\text{(II) score-field gap, zero iff }q=p}.
 $$
 
-On normal images ($q=p$) the Fisher term vanishes — only the irreducible denoising floor remains. On anomalies it's strictly positive and *is* the separation signal: it depends only on how different the anomaly's statistics are from normal, not on model error. Early $t$ leans on the Fisher term, late $t$ on the bounded denoising term — one reason the $t^2$-weighted sum beats reading off a single $t$.
+(I) is posterior noise present for normal and anomalous inputs alike — it carries no detection power. (II) is strictly positive exactly when $q\ne p$, and *is* the separation signal: it depends only on how different the anomaly's statistics are from normal, not on model error. On normal images ($q=p$) only (I) remains. Early $t$ leans on (II), late $t$ on the bounded (I) — one reason the $t^2$-weighted sum beats reading off a single $t$.
 
-The paper extends this from the oracle $v_p$ to the **learned** $v_\theta$: the identity holds up to an explicit field-approximation-error term, and ranking guarantees survive as long as that error doesn't swamp the Fisher signal — verified even far off-manifold (and independently re-checked on this project's own toy and real 5-seed checkpoints during the rebuttal).
-
-### Adjustable test-time compute
-
-$K$ and $T$ are pure compute knobs — more independent, parallelizable forward passes through the same frozen $v_\theta$, $O(KT)$ total, no retraining. Low $K,T$ for throughput, higher for accuracy.
+The paper extends this from the oracle $v_p$ to the **learned** $v_\theta$: the identity holds up to an explicit field-approximation-error term, and ranking guarantees survive as long as that error doesn't swamp the (II) signal — verified even far off-manifold (and independently re-checked on this project's own toy and real 5-seed checkpoints during the rebuttal).
 
 ---
 
