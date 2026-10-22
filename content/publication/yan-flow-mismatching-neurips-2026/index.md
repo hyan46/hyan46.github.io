@@ -17,6 +17,7 @@ date: '2026-09-01'
 year: '2026'
 url: /yan-flow-mismatching-neurips-2026/
 url_pdf: 'https://arxiv.org/abs/2605.23070'
+url_code: 'https://github.com/ShengzheC/Flow-Mismatching'
 url_project: '/yan-flow-mismatching-neurips-2026/'
 abstract: 'We propose Flow Mismatching, an unsupervised anomaly detection method that avoids reconstruction. A flow matching model is trained only on normal images; for a test image, its learned velocity field is compared with the direct geometric velocity toward that image along paths from noise. Mismatches between the two highlight anomalies, and aggregating them across time steps and paths yields pixel-wise heatmaps and image-level scores. We also give a theoretical decomposition of the mismatch, and report results on MVTec-AD and VisA that outperform reconstruction-based and other flow matching-based methods.'
 summary: 'Unsupervised anomaly detection from the mismatch between a flow matching model''s learned velocity and the direct velocity toward a test image, giving pixel-wise heatmaps and image-level scores.'
@@ -224,6 +225,7 @@ marks the ground-truth defect region.
 ## Resources {#resources}
 
 - **Paper:** [arXiv:2605.23070](https://arxiv.org/abs/2605.23070)
+- **Code:** [github.com/ShengzheC/Flow-Mismatching](https://github.com/ShengzheC/Flow-Mismatching)
 - **Venue:** NeurIPS 2026
 
 ---
