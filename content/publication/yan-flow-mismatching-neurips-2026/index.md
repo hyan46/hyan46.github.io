@@ -23,7 +23,31 @@ abstract: 'We propose Flow Mismatching, an unsupervised anomaly detection method
 summary: 'Unsupervised anomaly detection from the mismatch between a flow matching model''s learned velocity and the direct velocity toward a test image, giving pixel-wise heatmaps and image-level scores.'
 ---
 
-{{< figure src="figures/teaser.png" alt="Velocity mismatch in the (x,t) plane: affine paths toward a normal target stay aligned with the learned flow, while paths toward an anomalous target visibly diverge from it." caption="<span class=\"figure-number\">Figure 1: </span>**Velocity mismatch in the $(x,t)$ plane.** Light arrows show the learned flow $v_θ(x,t)$ from noise to normal data. Affine paths from the same starting noise $x_0$ target either a normal sample (green) or an anomalous sample (red). At selected times, the predicted velocity (blue) aligns with the geometric velocity toward normal targets but disagrees for anomalous targets — that disagreement is the anomaly signal Flow Mismatching detects." width="90%" >}}
+A live interactive demo illustrates the velocity-mismatch mechanism directly — a
+flow-matching model trained only on normal data, run toward a normal target and
+an anomalous target from the same starting noise draw. Solid arrows show the
+model's predicted velocity; dashed lines show the true heading. On the normal
+target they track each other; on the anomalous target they visibly diverge —
+that growing disagreement is the anomaly signal Flow Mismatching detects.
+
+**Try it yourself** — drag the time slider (or press play). The demo reproduces
+the paper's actual toy setup (Appendix B.1): an upper semicircle manifold,
+scored on the paper's own grid and aggregation rule, with a near-manifold
+anomaly placed closer to the boundary than a simple off-manifold gap — a
+harder, more subtle detection case.
+
+{{< rawhtml >}}
+<div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
+  <iframe
+    id="fm-toy-frame"
+    src="/demo/flow-mismatching/index.html"
+    title="Flow Mismatching interactive demo"
+    style="width:100%;height:900px;border:none;display:block;"
+    scrolling="no"
+    loading="lazy">
+  </iframe>
+</div>
+{{< /rawhtml >}}
 
 ## Overview {#overview}
 
@@ -49,7 +73,7 @@ $$
 x_t = (1-t)\,x_0 + t\,y, \qquad g(x_0, y, t) = y - x_0 = \frac{d}{dt}x_t, \qquad t\in[0,1].
 $$
 
-If $y$ is anomalous, $g$ is trying to reproduce content the model never saw during training, while $v_\theta$ — having only ever learned to transport toward normal images — keeps pulling toward normal-looking features. The two velocities disagree. If $y$ is normal, both velocities point the same way and agree closely. This is exactly the divergence you can see live in the first interactive demo below: solid arrows ($v_\theta$) track the dashed true heading ($g$) for the normal target, and visibly peel away from it for the off-manifold target.
+If $y$ is anomalous, $g$ is trying to reproduce content the model never saw during training, while $v_\theta$ — having only ever learned to transport toward normal images — keeps pulling toward normal-looking features. The two velocities disagree. If $y$ is normal, both velocities point the same way and agree closely. This is exactly the divergence you can see live in the interactive demo above: solid arrows ($v_\theta$) track the dashed true heading ($g$) for the normal target, and visibly peel away from it for the off-manifold target.
 
 Concretely, the anomaly indicator at pixel $i$ is the **per-pixel squared discrepancy**
 
@@ -77,7 +101,7 @@ $$
 H(i) = \frac{1}{|\mathcal T|}\sum_{t\in\mathcal T} w(t)\,\delta_t(i), \qquad S = \max_{i\in\Omega} H(i) \;+\; \frac{1}{|\Omega_{\text{top1}}|}\sum_{i\in\Omega_{\text{top1}}} H(i),
 $$
 
-where $\Omega$ is the pixel domain and $\Omega_{\text{top1}}$ the top 1% of heatmap values (a robust stand-in for "max", since any single pixel can be noisy). The weight is $w(t) = t^2$ — not a tuned hyperparameter, but the specific curve that falls out of **inverse-variance weighting** of the endpoint-estimation error in $y$-space once that error is converted to velocity units (the conversion introduces a $(1-t)^2$ scaling, which combined with inverse-variance weighting yields $t^2$; full derivation in the paper, Proposition 3.2). The second interactive demo below shows exactly this trade-off: per-$t$ landscapes on the left (biased-but-smooth at small $t$, sharp-but-speckled at large $t$) and the running $w(t)=t^2$-weighted combination on the right, which stays both sharp and smooth throughout.
+where $\Omega$ is the pixel domain and $\Omega_{\text{top1}}$ the top 1% of heatmap values (a robust stand-in for "max", since any single pixel can be noisy). The weight is $w(t) = t^2$ — not a tuned hyperparameter, but the specific curve that falls out of **inverse-variance weighting** of the endpoint-estimation error in $y$-space once that error is converted to velocity units (the conversion introduces a $(1-t)^2$ scaling, which combined with inverse-variance weighting yields $t^2$; full derivation in the paper, Proposition 3.2). The interactive demo below shows exactly this trade-off: per-$t$ landscapes on the left (biased-but-smooth at small $t$, sharp-but-speckled at large $t$) and the running $w(t)=t^2$-weighted combination on the right, which stays both sharp and smooth throughout.
 
 ### Why it works: a population-level guarantee
 
@@ -103,35 +127,9 @@ It's tempting to ask: since minimum-voting over $K$ seeds is just approximating 
 
 ---
 
-## Toy-Example Demonstrations {#toy-examples}
+## More Interactive Demos {#more-demos}
 
-A live interactive demo illustrates the velocity-mismatch
-mechanism on 2D toy data — a flow-matching model trained only on normal data,
-run toward a real data point and an off-manifold point from the same starting
-noise draws. Solid arrows show the model's predicted velocity; dashed lines
-show the true heading. On the normal target they track each other; on the
-off-manifold target they visibly diverge, and that growing disagreement is
-the anomaly signal.
-
-
-**Try it yourself** — drag the time slider (or press play). The demo shows the
-paper's actual toy setup (Appendix B.1): an upper semicircle manifold, scored on
-the paper's own grid and aggregation rule, with a near-manifold anomaly placed
-closer to the boundary than a simple off-manifold gap — a harder, more subtle
-detection case.
-
-{{< rawhtml >}}
-<div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
-  <iframe
-    id="fm-toy-frame"
-    src="/demo/flow-mismatching/index.html"
-    title="Flow Mismatching interactive demo"
-    style="width:100%;height:900px;border:none;display:block;"
-    scrolling="no"
-    loading="lazy">
-  </iframe>
-</div>
-{{< /rawhtml >}}
+The toy demo above shows the core mismatch mechanism in isolation. The two demos below show it in richer settings: how aggregating across ODE time balances bias against variance, and how the exact same computation looks on a real image.
 
 ### Bias-variance trade-off across ODE time {#bias-variance}
 
