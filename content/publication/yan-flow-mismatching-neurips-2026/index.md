@@ -23,18 +23,7 @@ abstract: 'We propose Flow Mismatching, an unsupervised anomaly detection method
 summary: 'Unsupervised anomaly detection from the mismatch between a flow matching model''s learned velocity and the direct velocity toward a test image, giving pixel-wise heatmaps and image-level scores.'
 ---
 
-A live interactive demo illustrates the velocity-mismatch mechanism directly — a
-flow-matching model trained only on normal data, run toward a normal target and
-an anomalous target from the same starting noise draw. Solid arrows show the
-model's predicted velocity; dashed lines show the true heading. On the normal
-target they track each other; on the anomalous target they visibly diverge —
-that growing disagreement is the anomaly signal Flow Mismatching detects.
-
-**Try it yourself** — drag the time slider (or press play). The demo reproduces
-the paper's actual toy setup (Appendix B.1): an upper semicircle manifold,
-scored on the paper's own grid and aggregation rule, with a near-manifold
-anomaly placed closer to the boundary than a simple off-manifold gap — a
-harder, more subtle detection case.
+Drag the time slider or press play: a flow-matching model trained only on normal data predicts a velocity (solid arrow) toward each target below, against the true heading (dashed). Where they diverge is the anomaly signal Flow Mismatching detects.
 
 {{< rawhtml >}}
 <div style="max-width:980px;margin:1.25rem auto;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.12);">
